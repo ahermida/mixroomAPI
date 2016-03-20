@@ -16,14 +16,11 @@ _test
 _cgo_defun.c
 _cgo_gotypes.go
 _cgo_export.*
-<<<<<<< HEAD
+
 .DS_Store
-_testmain.go
-=======
 
 _testmain.go
 
->>>>>>> 26c0f6c893bb4ba203f5de07d92df5bd25af7ede
 *.exe
 *.test
 *.prof
