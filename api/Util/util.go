@@ -1,5 +1,6 @@
 /*
-  Utility functions to be used in main (trying to keep things clean)
+  util.go -- Utility functions to be used in main
+  Currently just middleware functions
 */
 package util
 
