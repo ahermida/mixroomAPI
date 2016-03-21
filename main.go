@@ -7,6 +7,7 @@ import (
   "fmt"
   "github.com/ahermida/dartboardAPI/api/Server" //package with server
   "github.com/ahermida/dartboardAPI/api/Config" //package with port
+  "github.com/ahermida/dartboardAPI/api/DB" //package with DB
   "os"
   "runtime"
   "syscall"
@@ -20,7 +21,7 @@ func main() {
 
   //Log Started Server & provide hint for interface
   fmt.Printf("API Server started at: %s\n", time.Now().Format(time.RFC822))
-  fmt.Println("\nYou can type: \"exit\" or \"quit\" to shut down the app. Type \"stats\" to show info about the server.")
+  fmt.Println("\nYou can type: \"exit\" or \"quit\" to shut down the app.\nType \"stats\" to show info about the server.")
 
   //Get start time
   var startTime int64 = time.Now().Unix()
@@ -46,11 +47,12 @@ func main() {
           input = "exit"
         case "stats":
           fmt.Printf("\nCPU cores: %d\nGo routines: %d\nProcess ID: %v\n", runtime.NumCPU(), runtime.NumGoroutine(), syscall.Getpid())
-          fmt.Printf("The Application has been running since %d minutes\n", (time.Now().Unix() - startTime) / 60)
+          fmt.Printf("The Application has been running for %d minutes\n", (time.Now().Unix() - startTime) / 60)
       }
     }
   }
 
-  //Exit App
+  //Exit App -- but close connection to DB first
+  db.Connection.Close()
   os.Exit(0)
 }

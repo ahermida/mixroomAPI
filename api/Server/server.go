@@ -15,7 +15,7 @@ func Start(port string) {
   http.Handle("/api/", util.Log(util.Protect(routes.ApiMux)))
 
   //handle user routes -- Unprotected
-  http.Handle("/users/", util.Log(routes.UsersMux))
+  http.Handle("/user/", util.Log(routes.UserMux))
 
   //Start Server
   go http.ListenAndServe(port, nil) // set listen port
