@@ -3,42 +3,374 @@
 */
 package db
 
+import (
+  //"github.com/ahermida/dartboardAPI/api/Config"
+//  "gopkg.in/mgo.v2"
+  "errors"
+  "gopkg.in/mgo.v2/bson"
+//  "github.com/ahermida/dartboardAPI/api/Models"
+)
+
 //[UPDATE] activates account (when email is verified)
-func ActivateAccount(uid string) {
-  //call DB
+func ActivateAccount(user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- modifying activated value in user
+  change := bson.M{"$set": bson.M{"activated" : true}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
 //[UPDATE] changes password for a given uid
-func ChangePassword(newPassword, uid string) {
-  //call DB
+func ChangePassword(newPassword string, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- modifying the password
+  change := bson.M{"$set": bson.M{"password" : newPassword}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
+//[UPDATE] changes username for a given uid
+func ChangeUsername(username string, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //anonymous struct for simplicity in extracting user's usernames
+  var person struct {
+    Usernames []string
+  }
+
+  //check if we have username
+  if err := db.C("users").Find(bson.M{"_id": user}).Select(bson.M{"usernames": 1}).One(&person); err != nil {
+    return err
+  }
+
+  //check if user actually has username
+  hasUsername := false
+
+  //if it's in the user's list of usernames, set to true
+  for _, item := range person.Usernames {
+    if item == username {
+      hasUsername = true
+    }
+  }
+
+  //username not owned by user, so don't swap to it
+  if !hasUsername {
+
+    //let ourselves know that it failed
+    return errors.New("Username isn't owned by user.")
+  }
+
+  //setup change -- modifying the password
+  change := bson.M{"$set": bson.M{"username" : username}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
+}
+
+//[UPDATE] adds username for a given uid
+func AddUsername(username string, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //check if the username is already taken
+  count, err := db.C("users").Find(bson.M{"usernames": username}).Count()
+
+  //check if something went wrong with query
+  if err != nil {
+    return err
+  }
+
+  //check if somebody has the username
+  if count > 0 {
+    return errors.New("That username is already taken.")
+  }
+
+  //check if we have fewer than 3 usernames
+  queryUser := db.C("users").Find(bson.M{"_id": user})
+
+  //anonymous struct for simplicity in extracting user's usernames
+  var person struct {
+    Usernames []string
+  }
+
+  //check if we have username
+  if errFromCheck := queryUser.Select(bson.M{"usernames": 1}).One(&person); err != nil {
+    return errFromCheck
+  }
+
+  //check for count
+  if len(person.Usernames) > 2 {
+    return errors.New("Can't have more than 3 usernames.")
+  }
+
+  //we're all good, so go ahead and set up the query
+  change := bson.M{"$addToSet": bson.M{"usernames" : username}}
+
+  //run update to user (found by _id)
+  errFromChange := db.C("users").Update(bson.M{"_id": user}, change)
+
+  if errFromChange != nil {
+    return errFromChange
+  }
+
+  //should be nil if nothing went wrong
+  return nil
+}
+
+//[UPDATE] removes username for a given uid -- musn't be username
+func RemoveUsername(username string, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //check if we have fewer than 3 usernames
+  queryUser := db.C("users").Find(bson.M{"_id": user})
+
+  //anonymous struct for simplicity in extracting user's usernames
+  var person struct {
+    Usernames []string
+  }
+
+  //check if we have username
+  if err := queryUser.Select(bson.M{"usernames": 1}).One(&person); err != nil {
+    return err
+  }
+
+  //check if we own the username
+  hasUsername := false
+
+  //if it's in the user's list of usernames, set to true
+  for _, item := range person.Usernames {
+    if item == username {
+      hasUsername = true
+    }
+  }
+
+  //if user doesn't own username, user shouldn't be able to remove it
+  if !hasUsername {
+    return errors.New("User must own username to remove it.")
+  }
+
+  //we're all good, so go ahead and set up the query
+  change := bson.M{"$pull": bson.M{"usernames" : username}}
+
+  //run update to user (found by _id)
+  errFromChange := db.C("users").Update(bson.M{"_id": user}, change)
+
+  if errFromChange != nil {
+    return errFromChange
+  }
+
+  //should be nil if nothing went wrong
+  return nil
+}
+
+
+
 //[UPDATE] change the text for a given post (id)
-func EditPost(text, id string) {
-  //call DB
+func EditPost(text string, post bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- modifying the password
+  change := bson.M{"$set": bson.M{"body" : text}}
+
+  //run update to user (found by _id)
+  err := db.C("posts").Update(bson.M{"_id": post}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
 //[UPDATE] deletes a user's account (in reality, updates 'deleted' to 'true')
-func DeleteUser(uid string) {
-  //call DB
+func DeleteUser(user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- modifying activated value in user -- reactivate with email
+  change := bson.M{"$set": bson.M{"activated" : false}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
-//[UPDATE] saves a thread to a user's watchlist
-func WatchThread(threadID, userID string) {
-  //call DB
+//[UPDATE] pushes a thread to a user's watchlist
+func AddAdmin(oldAdmin, user bson.ObjectId, group string) error {
+
+  //get group info
+  grp, err := CheckGroup(group)
+
+  //check if something went wrong
+  if err != nil {
+    return err
+  }
+
+  //check for admin in group
+  hasAdmin := false
+
+  //if person is author
+  if grp.Author == oldAdmin {
+    hasAdmin = true
+  }
+
+  //check Admins for old admin (only admins can add admins)
+  for _, person := range grp.Admins {
+    if oldAdmin == person {
+      hasAdmin = true
+    }
+  }
+
+  //if users have permission, add them
+  if !hasAdmin {
+    return errors.New("If users don't have admin permissions, they can't add other users as admins.")
+  }
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change
+  change := bson.M{"$addToSet": bson.M{"admins" : user}}
+
+  //run update to group
+  errFromUpdate := db.C("group").Update(bson.M{"name": group}, change)
+
+  //should be nil if nothing went wrong updating
+  return errFromUpdate
+}
+
+//[UPDATE] Removes admins, only the author can do this
+func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
+
+  //get group info
+  grp, errFromCheck := CheckGroup(group)
+
+  //make sure nothing went wrong getting grp
+  if errFromCheck != nil {
+    return errFromCheck
+  }
+
+  //if person is author
+  if grp.Author != oldAdmin {
+    return errors.New("Only author can remove admins.")
+  }
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change
+  change := bson.M{"$pull": bson.M{"admins" : user}}
+
+  //run update
+  err := db.C("group").Update(bson.M{"name": group}, change)
+
+  //should be nil if nothing went wrong
+  return err
+}
+
+//[UPDATE] pushes a thread to a user's watchlist
+func WatchThread(thread, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- push thread ID to saved
+  change := bson.M{"$addToSet": bson.M{"saved" : thread}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
 //[UPDATE] removes a thread from a user's watchlist
-func UnwatchThread(threadID, userID string) {
-  //call DB
+func UnwatchThread(thread, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- modifying activated value in user -- reactivate with email
+  change := bson.M{"$pull": bson.M{"saved" : thread}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
 }
 
 //[UPDATE] saves a friend
-func AddFriend(friendID, userID string) {
-  //this happens when somebody accepts a request
+func AddFriend(friend, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- add friend to list -- do same for friend
+  change := bson.M{"$addToSet": bson.M{"friends" : friend}}
+
+  friendChange := bson.M{"$addToSet": bson.M{"friends": user}}
+
+  //run update to user (found by _id)
+  if err := db.C("users").Update(bson.M{"_id": user}, change); err != nil {
+    return err
+  }
+
+  //run update to friend (found by _id)
+  if err := db.C("users").Update(bson.M{"_id": friend}, friendChange); err != nil {
+    return err
+  }
+
+  //should be nil if nothing went wrong
+  return nil
 }
 
 //[UPDATE] removes a friend
-func RemoveFriend(friendID, userID string) {
-  //this happens when somebody accepts
+func RemoveFriend(friend, user bson.ObjectId) error {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //setup change -- remove friend from list -- do same for friend
+  change := bson.M{"$pull": bson.M{"friends" : friend}}
+
+  //setup change for friend -- remove self from list
+  friendChange := bson.M{"$pull": bson.M{"friends": user}}
+
+  //run update to user (found by _id)
+  if err := db.C("users").Update(bson.M{"_id": user}, change); err != nil {
+    return err
+  }
+
+  //run update to friend (found by _id)
+  if err := db.C("users").Update(bson.M{"_id": friend}, friendChange); err != nil {
+    return err
+  }
+
+  //should be nil if nothing went wrong
+  return nil
 }

@@ -2,6 +2,11 @@
    User Routes that will be used to Create, Read, and Update user
    Creates a ServeMux from the default http package
 
+   handles: registering user, authorizing user, logging in user,
+            updating user's password, updating user's username,
+            getting a user's friends, adding a saved thread, getting a user's saved threads,
+            removing a saved thread, adding a friend, removing a friend, getting notifications,
+            add username, remove username
 */
 package routes
 
@@ -15,16 +20,36 @@ var UserMux = http.NewServeMux()
 
 // Setup Routes with Mux
 func init() {
-  //make user
+
+  //POST register user
   UserMux.HandleFunc("/user/register", register)
-  //get user info
+
+  //POST activate user
   UserMux.HandleFunc("/user/activate", activate)
-  //login user
+
+  //DELETE fake delete user
+  UserMux.HandleFunc("/user/remove", activate)
+
+  //POST login user
   UserMux.HandleFunc("/user/login", login)
-  //update password
-  UserMux.HandleFunc("/user/updatepassword", updatePassword)
-  //get user
-  UserMux.HandleFunc("/user/getuser", getUser)
+
+  //POST update password
+  UserMux.HandleFunc("/user/changepass", updatePassword)
+
+  //POST get user info
+  UserMux.HandleFunc("/user/info", getUser)
+
+  //POST & PUT add and removed saved
+  UserMux.HandleFunc("/user/saved", register)
+
+  //POST get user's saved threads
+  UserMux.HandleFunc("/user/threads", register)
+
+  //POST add a username, DELETE to remove it
+  UserMux.HandleFunc("/user/username", register)
+
+  //POST change username
+  UserMux.HandleFunc("/user/changeusername", register)
 }
 
 /*

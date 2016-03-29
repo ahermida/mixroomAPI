@@ -1,6 +1,10 @@
 /*
    API Routes that will be used by the source of the application.
    Creates a ServeMux from the default http package
+
+   handles: creating a group, removing a group, getting a group,
+            adding admins, removing admins -- could logically be
+            handled in this file
 */
 package routes
 
@@ -10,18 +14,19 @@ import (
     "net/http"
   //  "encoding/json"
 //    "github.com/dgrijalva/jwt-go"
-//    "github.com/ahermida/Writer/resourceGo/DB"
-//    "github.com/ahermida/Writer/resourceGo/Config"
 )
 
 // Routes with /api/ prefix
-var ApiMux = http.NewServeMux()
+var GroupMux = http.NewServeMux()
 
 // Setup Routes with Mux
 func init() {
-  ApiMux.HandleFunc("/api/test", test)
-  ApiMux.HandleFunc("/api/user", user)
-  ApiMux.HandleFunc("/api/other", other)
+
+  //Handles GET, POST, and DELETE for groups
+  GroupMux.HandleFunc("/group/", test)
+
+  //Handles GET, PUT for Admins in groups
+  GroupMux.HandleFunc("/group/admin", user)
 }
 
 /*

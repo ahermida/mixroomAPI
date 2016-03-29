@@ -20,4 +20,45 @@ func init() {
   if err != nil {
     log.Panic(err)
   }
+  Connection.SetMode(mgo.Monotonic, true)
+  ensureUserIndex()
+  ensureGroupIndex()
+}
+
+//Makes Sure that Users cannot be duplicates
+func ensureUserIndex() {
+  index := mgo.Index{
+    Key:        []string{"email", "usernames"},
+    Unique:     true,
+    DropDups:   true,
+    Background: true,
+    Sparse:     true,
+  }
+
+  //ensure indices are unique
+  err := Connection.DB("dartboard").C("users").EnsureIndex(index)
+
+  //index needs to be unique
+  if err != nil {
+    log.Panic(err)
+  }
+}
+
+//Makes Sure that groups cannot be duplicates
+func ensureGroupIndex() {
+  index := mgo.Index{
+    Key:        []string{"name"},
+    Unique:     true,
+    DropDups:   true,
+    Background: true,
+    Sparse:     true,
+  }
+
+  //ensure indices are unique
+  err := Connection.DB("dartboard").C("groups").EnsureIndex(index)
+
+  //index needs to be unique
+  if err != nil {
+    log.Panic(err)
+  }
 }
