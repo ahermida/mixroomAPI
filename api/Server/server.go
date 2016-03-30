@@ -11,10 +11,16 @@ import (
 
 func Start(port string) {
 
-  //handle api routes -- Protected
-  http.Handle("/api/", util.Log(util.Protect(routes.ApiMux)))
+  //handle group manipulation routes
+  http.Handle("/group/", util.Log(routes.GroupMux))
 
-  //handle user routes -- Unprotected
+  //handle auth routes
+  http.Handle("/auth/", util.Log(routes.AuthMux))
+
+  //handle thread manipulation routes
+  http.Handle("/thread/", util.Log(routes.ThreadMux))
+
+  //handle user routes
   http.Handle("/user/", util.Log(routes.UserMux))
 
   //Start Server

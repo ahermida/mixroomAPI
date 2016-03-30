@@ -23,6 +23,33 @@ func CheckGroup(group string) (*models.Group, error) {
   return &g, nil
 }
 
+//[READ] checks if user is a member of a group
+func IsMember(group string, user string) bool {
+  db := Connection.DB("dartboard")
+  var g models.Group
+  err := db.C("groups").Find(bson.M{"name": group}).One(&g)
+
+  //check if something went wrong finding the group
+  if err != nil {
+
+    //if something goes wrong, return false to be safe
+    return false
+  }
+  if !g.Private {
+    return true
+  }
+  if user == g.Author.Hex() {
+    return true
+  }
+  //bring back group metadata
+  for _, member := range g.Admins {
+    if member.Hex() == user {
+      return true
+    }
+  }
+  return false
+}
+
 //[READ] gets available threads for a given group on a particular page
 func GetGroup(group string, page int) ([]models.Mthread, error) {
 

@@ -30,7 +30,7 @@ func CreateUser(email, username, password string) error {
   }
 
   //create content feed for given user
-  if err := CreateGroup(usr.Id.Hex(), usr.Id); err != nil {
+  if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
     return err
   }
 
@@ -191,7 +191,7 @@ func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, auth
 }
 
 //[CREATE] creates a group, rather, reserves a namespace for a group
-func CreateGroup(group string, user bson.ObjectId) error {
+func CreateGroup(group string, user bson.ObjectId, private bool) error {
   //get proper db
   db := Connection.DB("dartboard")
 
@@ -201,6 +201,7 @@ func CreateGroup(group string, user bson.ObjectId) error {
     Name: group,
     Author: user,
     Admins: make([]bson.ObjectId,0),
+    Private: private,
   }
 
   //insert group into DB

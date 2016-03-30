@@ -14,4 +14,42 @@ type Group struct {
   Name    string          `bson:"name"`
   Author  bson.ObjectId   `bson:"author"`
   Admins  []bson.ObjectId `bson:"admins"`
+  Private bool            `bson:"private"`
+}
+
+//For the Group View
+type Mthread struct {
+	Id      bson.ObjectId `bson:"_id,omitempty"`
+  Created time.Time     `bson:"created"`
+  Thread  bson.ObjectId `bson:"thread"`
+  Head    *Post         `bson:"head"`
+  Group   string        `bson:"group"`
+}
+
+
+/*
+  JSON Handling
+*/
+
+type GetGroup struct {
+  Page  int    `json:"page"`
+  Group string `json:"group"`
+}
+
+type CreateGroup struct {
+  Private   bool   `json:"anonymous"`
+  Group     string `json:"group"`
+}
+
+type SendGroup struct {
+  Threads []Mthread `json:"threads"`
+}
+
+type DeleteGroup struct {
+  Group string `json:"group"`
+}
+
+type GroupAdmin struct {
+  User  string `json:"user"`
+  Group string `json:"group"`
 }

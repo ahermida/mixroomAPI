@@ -5,12 +5,12 @@
 package util
 
 import (
-    //"fmt"
+    "fmt"
     "log"
     "time"
     "net/http"
-    //"github.com/dgrijalva/jwt-go"
-    //"github.com/ahermida/dartboardAPI/resourceGo/Config"
+    "github.com/dgrijalva/jwt-go"
+    "github.com/ahermida/dartboardAPI/api/Config"
 )
 
 // HTTP logger
@@ -55,4 +55,19 @@ func Protect(handler http.Handler) http.Handler {
     */
 
   })
+}
+
+func CheckToken(userToken string) (*jwt.Token, error){
+
+  //check token that we got
+  token, err := jwt.Parse(userToken, func(token *jwt.Token) (interface{}, error) {
+
+    //parsed token lookups are done with a callback
+    if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+        return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+    }
+    return []byte(config.JwtSecret), nil
+  })
+
+  return token, err
 }
