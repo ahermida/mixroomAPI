@@ -26,9 +26,18 @@ type Thread struct {
 }
 
 type ResThread struct {
-  Id      bson.ObjectId   `bson:"_id,omitempty"`
-  Created time.Time       `bson:"created"`
-  Posts   []Post          `bson:"posts"`
-  Alive   bool            `bson:"alive"`
-  Group   string          `bson:"group"`
+  Id      bson.ObjectId   `json:"-" bson:"_id,omitempty"`
+  SId     string          `json:"id,omitempty" bson:"-"`
+  Created time.Time       `json:"created" bson:"created"`
+  Posts   []Post          `json:"posts" bson:"posts"`
+  Alive   bool            `json:"-" bson:"alive"`
+  Group   string          `json:"group" bson:"group"`
+}
+
+/*
+  JSON Handling
+*/
+
+type GetThread struct {
+  Thread string `json:"page"`
 }

@@ -1,3 +1,4 @@
+
 /*
    API Routes that will be used by the source of the application.
    Creates a ServeMux from the default http package
@@ -10,11 +11,12 @@
 package routes
 
 import (
-    "fmt"
-  //  "log"
-    "net/http"
-  //  "encoding/json"
-//    "github.com/dgrijalva/jwt-go"
+  "github.com/ahermida/dartboardAPI/api/Util"
+  "github.com/ahermida/dartboardAPI/api/Models"
+  "net/http"
+  "encoding/json"
+  "gopkg.in/mgo.v2/bson"
+  "github.com/ahermida/dartboardAPI/api/DB"
 )
 
 // Routes with /api/ prefix
@@ -65,7 +67,65 @@ func pst(res http.ResponseWriter, req *http.Request) {
 
 //handle POST /thread/
 func getThread(res http.ResponseWriter, req *http.Request) {
-  fmt.Fprintf(res, "Admin Test Passed!")
+  var thrd models.GetThread
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&thread); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //just get thread and check if we're authorized afterwards
+  filledThread, threadErr := db.GetThread(bson.ObjectIdHex(thrd.Thread))
+
+  //fix up filledThread so it has S(tring)Id -- hex representation of _id
+  filledThread.SId = filledThread.Id.Hex()
+
+  //check for error in getting thread
+  if threadErr != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //get token from header
+  userToken := req.Header.Get("access_token")
+
+  var id string
+
+  //if user has no token
+  if userToken == "" {
+
+    //fail
+    id = ""
+  } else {
+
+    //check token that we got
+    token, err := util.CheckToken(userToken)
+
+    //if nothing went wrong
+    if err != nil || !token.Valid {
+
+      //fail
+      id = ""
+    } else {
+
+      //success
+      id = token.Claims["id"].(string)
+    }
+  }
+
+  //check if we're a member of the group
+  if !isMember(filledThread.Group, id) {
+    http.Error(res, statusText(401), 401)
+    return
+  }
+
+  //onward
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if err := json.NewEncoder(res).Encode(filledThread); err != nil {
+    http.Error(res, statusText(400), 400)
+    return
+  }
 }
 
 //handle POST /thread/modify
