@@ -127,6 +127,9 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
     Threads: group,
   }
 
+  //send back no error response
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
   //send over data
   if err := json.NewEncoder(res).Encode(&grp); err != nil {
       http.Error(res, http.StatusText(500), 500)
@@ -142,7 +145,13 @@ func createGroup(res http.ResponseWriter, req *http.Request) {
   //POST request handling
   decoder := json.NewDecoder(req.Body)
   if err := decoder.Decode(&reqGroup); err != nil {
-    http.Error(res, http.StatusText(500), 500)
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //validate input from post -- particularly the group name -- if fails, return err code
+  if !validateGeneral(reqGroup.Group){
+    http.Error(res, http.StatusText(422), 422)
     return
   }
 
@@ -192,7 +201,7 @@ func removeGroup(res http.ResponseWriter, req *http.Request) {
   //POST request handling
   decoder := json.NewDecoder(req.Body)
   if err := decoder.Decode(&reqGroup); err != nil {
-    http.Error(res, http.StatusText(500), 500)
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 
@@ -243,7 +252,7 @@ func addAdmin(res http.ResponseWriter, req *http.Request) {
   //POST request handling
   decoder := json.NewDecoder(req.Body)
   if err := decoder.Decode(&reqAdmin); err != nil {
-    http.Error(res, http.StatusText(500), 500)
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 
@@ -297,7 +306,7 @@ func removeAdmin(res http.ResponseWriter, req *http.Request) {
   //POST request handling
   decoder := json.NewDecoder(req.Body)
   if err := decoder.Decode(&reqAdmin); err != nil {
-    http.Error(res, http.StatusText(500), 500)
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 

@@ -28,11 +28,24 @@ func ActivateAccount(user bson.ObjectId) error {
 }
 
 //[UPDATE] changes password for a given uid
-func ChangePassword(newPassword string, user bson.ObjectId) error {
+func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) error {
 
   //get proper DB
   db := Connection.DB("dartboard")
 
+  var usr struct {
+    Password string
+  }
+
+  if err := db.C("users").Find(bson.M{"_id": user}).Select(bson.M{"password": 1}).One(&usr); err != nil {
+    return err
+  }
+
+  //if passwords don't match, return err
+  if usr.Password != oldPassword {
+    return errors.New("Passwords have to match.")
+  }
+  
   //setup change -- modifying the password
   change := bson.M{"$set": bson.M{"password" : newPassword}}
 
@@ -76,7 +89,7 @@ func ChangeUsername(username string, user bson.ObjectId) error {
     return errors.New("Username isn't owned by user.")
   }
 
-  //setup change -- modifying the password
+  //setup change -- modifying the username
   change := bson.M{"$set": bson.M{"username" : username}}
 
   //run update to user (found by _id)
@@ -209,14 +222,54 @@ func DeleteUser(user bson.ObjectId) error {
   //get proper DB
   db := Connection.DB("dartboard")
 
+  //find user's name
+  var usr struct {
+    Username string
+  }
+
+  //query username
+  if err := db.C("users").Find(bson.M{"_id": user}).Select(bson.M{"username": 1}).One(&usr); err != nil {
+    return err
+  }
+
+  //get friends so we can remove this user from each of their friends lists
+  friends, friendErr := GetFriends(usr.Username)
+
+  //return friendErr if something went wrong getting friends
+  if friendErr != nil {
+    return friendErr
+  }
+
+  //go through and make the changes
+  for _, friend := range friends {
+
+    //set up change
+    change := bson.M{"$pull": bson.M{"friends" : friend}}
+
+    //remove ourself, check for err
+    if err := db.C("users").Update(bson.M{"_id": user}, change); err != nil {
+      return err
+    }
+  }
+
+  //remove our entire friends list
+  rmFriends := bson.M{"set": bson.M{"friends": make([]bson.ObjectId,0)}}
+
+  //run update to user (found by _id)
+  if err := db.C("users").Update(bson.M{"_id": user}, rmFriends); err != nil {
+    return err
+  }
+
   //setup change -- modifying activated value in user -- reactivate with email
   change := bson.M{"$set": bson.M{"activated" : false}}
 
   //run update to user (found by _id)
-  err := db.C("users").Update(bson.M{"_id": user}, change)
+  if err := db.C("users").Update(bson.M{"_id": user}, change); err != nil {
+    return err
+  }
 
   //should be nil if nothing went wrong
-  return err
+  return nil
 }
 
 //[UPDATE] pushes a thread to a user's watchlist

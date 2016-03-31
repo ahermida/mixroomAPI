@@ -137,6 +137,30 @@ func GetUser(userID string) {
   //call DB
 }
 
+//[READ] compares the user & hashed password given to the one in the DB
+func LoginCheck(email, hashword string) (string, bool) {
+
+  //get proper DB
+  db := Connection.DB("dartboard")
+
+  //make struct for query
+  var usr struct {
+    Password string `bson:"password"`
+    Id bson.ObjectId `bson:"_id"`
+  }
+
+  //run query, only getting password
+  err := db.C("users").Find(bson.M{"email": email}).Select(bson.M{"password": 1, "_id": 1}).One(&usr);
+
+  //if there's a problem, or unmatching passwords, return false
+  if err != nil || usr.Password != hashword {
+    return "", false
+  }
+
+  //it's a match!
+  return usr.Id.Hex(), true
+}
+
 //[READ] gets user's friends -- resolving "joins"
 func GetFriends(author string) ([]bson.ObjectId, error) {
 

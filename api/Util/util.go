@@ -71,3 +71,15 @@ func CheckToken(userToken string) (*jwt.Token, error){
 
   return token, err
 }
+
+func MakeToken(id string) (string, error){
+  //create token
+  tokenizer := jwt.New(jwt.SigningMethodHS256)
+  // Set some claims -- Data that goes with JWT
+  tokenizer.Claims["id"] = id
+  tokenizer.Claims["exp"] = time.Now().Add(time.Hour * 480).Unix()
+  // Sign and get the complete encoded token as a string
+  token, err := tokenizer.SignedString([]byte(config.JwtSecret))
+  return token, err
+
+}

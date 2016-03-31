@@ -40,3 +40,27 @@ type User struct {
   Saved         []bson.ObjectId `bson:"saved"`
   Description   string          `bson:"description,omitempty"`
 }
+
+/*
+  JSON Handling
+*/
+
+type CreateUser struct {
+  Username string `json:"username"`
+  Email    string `json:"email"`
+  Password string `json:"password"`
+}
+
+type AuthUser struct {
+  Email    string `json:"email"`
+  Password string `json:"password"`
+}
+
+type AuthedUser struct {
+  Token string `json:"token"`
+}
+
+type ChangePW struct {
+  Password string `json:"password"`
+  NewPassword string `json:"newPassword"`
+}

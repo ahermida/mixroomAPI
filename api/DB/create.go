@@ -9,7 +9,7 @@ import (
 )
 
 //[CREATE] creates user in the Database with given email, username, and hashed password
-func CreateUser(email, username, password string) error {
+func CreateUser(email, username, password string) (string, error) {
   //connect to appropriate DB
   db := Connection.DB("dartboard")
 
@@ -31,16 +31,16 @@ func CreateUser(email, username, password string) error {
 
   //create content feed for given user
   if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
-    return err
+    return "", err
   }
 
   //insert user
   if err := db.C("users").Insert(usr); err != nil {
-    return err
+    return "", err
   }
 
   //all went well, so return nil err
-  return nil
+  return usr.Id.Hex(), nil
 }
 
 //[CREATE] creates a thread from a struct of a given JSON -- also creates an mthread for each location
