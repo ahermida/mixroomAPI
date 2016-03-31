@@ -12,6 +12,7 @@ package routes
 
 import (
   "github.com/ahermida/dartboardAPI/api/Util"
+  "fmt"
   "github.com/ahermida/dartboardAPI/api/Models"
   "net/http"
   "encoding/json"
@@ -25,7 +26,7 @@ var ThreadMux = http.NewServeMux()
 // Setup Routes with Mux
 func init() {
 
-  //POST for creating thread, DELETE removing thread, GET thread
+  //POST for getting thread
   ThreadMux.HandleFunc("/thread/", getThread)
 
   //POST for creating thread, DELETE removing thread, GET thread
@@ -67,7 +68,7 @@ func pst(res http.ResponseWriter, req *http.Request) {
 
 //handle POST /thread/
 func getThread(res http.ResponseWriter, req *http.Request) {
-  var thrd models.GetThread
+  var thread models.GetThread
   decoder := json.NewDecoder(req.Body)
   if err := decoder.Decode(&thread); err != nil {
     http.Error(res, http.StatusText(400), 400)
@@ -75,7 +76,7 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   }
 
   //just get thread and check if we're authorized afterwards
-  filledThread, threadErr := db.GetThread(bson.ObjectIdHex(thrd.Thread))
+  filledThread, threadErr := db.GetThread(bson.ObjectIdHex(thread.Thread))
 
   //fix up filledThread so it has S(tring)Id -- hex representation of _id
   filledThread.SId = filledThread.Id.Hex()
@@ -114,8 +115,8 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   }
 
   //check if we're a member of the group
-  if !isMember(filledThread.Group, id) {
-    http.Error(res, statusText(401), 401)
+  if !db.IsMember(filledThread.Group, id) {
+    http.Error(res, http.StatusText(401), 401)
     return
   }
 
@@ -123,12 +124,19 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(filledThread); err != nil {
-    http.Error(res, statusText(400), 400)
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 }
 
-//handle POST /thread/modify
+/* handle POST /thread/modify
+  --requires new post
+    -group name -- just check id IsMember
+    -author 'name' -- stomp this out
+    -body
+    -content
+    -anonymous y / n
+*/
 func createThread(res http.ResponseWriter, req *http.Request) {
   fmt.Fprintf(res, "Admin Test Passed!")
 }
