@@ -31,14 +31,14 @@ type Post struct {
   Body       string          `bson:"body"`
 }
 
-func InitPost(username string) *Post{
-  return &Post{
-    Id: bson.NewObjectId(),
-    Created: bson.Now(),
-    Author: "DB",
-    Replies: make([]bson.ObjectId,0),
-    ResponseTo: make([]bson.ObjectId,0),
-    Content: "",
-    Body: "",
-  }
+/*
+  JSON Handling
+*/
+
+type NewPost struct {
+  Body      string   `json:"body"`
+  Username  string   `json:"username"`
+  Content   []string `json:"content"`
+  Anonymous bool     `json:"anonymous"`
+  Thread    string   `json:"thread"`
 }

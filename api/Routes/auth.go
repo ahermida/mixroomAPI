@@ -248,28 +248,12 @@ func updatePassword(res http.ResponseWriter, req *http.Request) {
   }
 
   //get token from header
-  userToken := req.Header.Get("access_token")
+  id := util.GetId(req)
 
-  //if user has no token
-  if userToken == "" {
-
-    //return err
+  //check if the token is legit
+  if id == "" {
     http.Error(res, http.StatusText(401), 401)
-    return
   }
-
-  //check token that we got
-  token, err := util.CheckToken(userToken)
-
-  //if nothing went wrong
-  if err != nil || !token.Valid {
-    //return err
-    http.Error(res, http.StatusText(401), 401)
-    return
-  }
-
-  //success
-  id := token.Claims["id"].(string)
 
   //check if password is the same
   var usr models.ChangePW

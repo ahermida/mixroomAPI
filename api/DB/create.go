@@ -138,7 +138,6 @@ func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *model
 
 //[CREATE] creates a post for a given thread
 func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error) {
-
   //connect to DB
   db := Connection.DB("dartboard")
 

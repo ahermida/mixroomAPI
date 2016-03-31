@@ -50,6 +50,20 @@ func IsMember(group string, user string) bool {
   return false
 }
 
+//[READ] returns group that the given thead (hex string) belongs to
+func GetThreadParent(thread string) string {
+  db := Connection.DB("dartboard")
+  var thrd struct {
+    Group string
+  }
+  err := db.C("threads").Find(bson.M{"_id": bson.ObjectIdHex(thread)}).Select(bson.M{"group": 1}).One(&thrd)
+  if err != nil {
+    return ""
+  }
+
+  return thrd.Group
+}
+
 //[READ] gets available threads for a given group on a particular page
 func GetGroup(group string, page int) ([]models.Mthread, error) {
 

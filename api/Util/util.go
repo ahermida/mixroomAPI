@@ -83,3 +83,34 @@ func MakeToken(id string) (string, error){
   return token, err
 
 }
+
+func GetId(req *http.Request) string {
+
+  //Should people anonymously create threads in private groups? yup, just with permissions
+  userToken := req.Header.Get("access_token")
+
+  var id string
+
+  //if user has no token
+  if userToken == "" {
+
+    //fail
+    id = ""
+  } else {
+
+    //check token that we got
+    token, err := util.CheckToken(userToken)
+
+    //if nothing went wrong
+    if err != nil || !token.Valid {
+
+      //fail
+      id = ""
+    } else {
+
+      //success
+      id = token.Claims["id"].(string)
+    }
+  }
+  return id
+}

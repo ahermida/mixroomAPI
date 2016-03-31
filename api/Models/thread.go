@@ -41,3 +41,15 @@ type ResThread struct {
 type GetThread struct {
   Thread string `json:"page"`
 }
+
+type NewThread struct {
+  Group     string `json:"group"`
+  Body      string `json:"body"`
+  Username  string `json:"username"`
+  Content   string `json:"content"`
+  Anonymous bool   `json:"anonymous"`
+}
+
+type RemoveThread struct {
+  Thread string `json:"thread"`
+}

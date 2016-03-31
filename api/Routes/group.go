@@ -74,34 +74,9 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(500), 500)
     return
   }
-
-  //get token from header
-  userToken := req.Header.Get("access_token")
-
+  
   //user _id in hex
-  var id string
-
-  //if user has no token
-  if userToken == "" {
-
-    //set id to zero-value string: ""
-    id = ""
-  } else {
-
-    //check token that we got
-    token, err := util.CheckToken(userToken)
-
-    if err == nil && token.Valid {
-
-      //success -- validate account & continue
-      id = token.Claims["id"].(string)
-
-    } else {
-
-      //invalid token, so set empty id
-      id = ""
-    }
-  }
+  id := util.GetId(req)
 
   //check if private group, if so, we need to do some auth
   if !db.IsMember(reqGroup.Group, id) {

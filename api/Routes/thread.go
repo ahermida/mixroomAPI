@@ -87,32 +87,7 @@ func getThread(res http.ResponseWriter, req *http.Request) {
     return
   }
 
-  //get token from header
-  userToken := req.Header.Get("access_token")
-
-  var id string
-
-  //if user has no token
-  if userToken == "" {
-
-    //fail
-    id = ""
-  } else {
-
-    //check token that we got
-    token, err := util.CheckToken(userToken)
-
-    //if nothing went wrong
-    if err != nil || !token.Valid {
-
-      //fail
-      id = ""
-    } else {
-
-      //success
-      id = token.Claims["id"].(string)
-    }
-  }
+  id := util.GetId(req)
 
   //check if we're a member of the group
   if !db.IsMember(filledThread.Group, id) {
@@ -129,25 +104,79 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   }
 }
 
-/* handle POST /thread/modify
-  --requires new post
-    -group name -- just check id IsMember
-    -author 'name' -- stomp this out
-    -body
-    -content
-    -anonymous y / n
-*/
+// handle POST /thread/modify
 func createThread(res http.ResponseWriter, req *http.Request) {
-  fmt.Fprintf(res, "Admin Test Passed!")
+  var reqBody models.NewThread
+  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
+    http.Error(res, http.StatusCode(400), 400)
+    return
+  }
+
+  //Should people anonymously create threads in private groups? yup, just with permissions
+  id := util.GetId(req)
+
+  //check if we're allowed to create this thread
+  if !db.IsMember(reqBody.Group, id) {
+    http.Error(res, http.StatusCode(401), 401)
+    return
+  }
+
+  //maybe we should make sure that author is the same as username
+  if !validateGeneral(reqBody.author) {
+    http.Error(res, http.StatusCode(400), 400)
+    return
+  }
+  //now we're allowed so let's make it
+  post := db.CreateHeadPost(reqBody.Author, reqBody.Body, reqBody.Content, bson.ObjectIdHex(id))
+  if err := CreateThread(reqBody.Group, reqBody.Anonymous, post); err != nil {
+    http.Error(res, http.StatusCode(500), 500)
+    return
+  }
+
+  //success
+  res.WriteHeader(http.StatusNoContent)
 }
 
 //handle DELETE /thread/modify
 func removeThread(res http.ResponseWriter, req *http.Request) {
-  fmt.Fprintf(res, "Admin Test Passed!")
+  var reqBody models.RemoveThread
+  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
+    http.Error(res, http.StatusCode(400), 400)
+    return
+  }
+  id := util.GetId(req)
+  err := db.DeleteThread(bson.ObjectIdHex(reqBody.Thread), bson.ObjectIdHex(id))
+  if err != nil {
+    http.Error(res, http.StatusCode(401), 401)
+    return
+  }
+  //else we're all good!
+  res.WriteHeader(http.StatusNoContent)
 }
 
 //handle POST /thread/post
 func createPost(res http.ResponseWriter, req *http.Request) {
+  var reqBody models.NewPost
+  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
+    http.Error(res, http.StatusCode(400), 400)
+    return
+  }
+  id := util.GetId(req)
+  grp := db.GetThreadParent(req.Thread)
+  if !db.IsMember(grp, id) {
+    http.Error(res, http.StatusCode(401), 401)
+    return
+  }
+  responseTo := make([]bson.ObjectId, 0)
+  for _, postId := range reqBody.ResponseTo {
+    responseTo = append(responseTo, bson.ObjectIdHex(postId))
+  }
+  
+  //convert responseTo list to ObjectIds
+
+  //CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string)
+
+  db.CreatePost()
   fmt.Fprintf(res, "Admin Test Passed!")
 }
 

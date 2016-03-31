@@ -38,8 +38,8 @@ func validatePassword(password string) bool {
   return sevenPlus && chars && nums
 }
 
-// function to validate username field, group name field
+// function to validate username field, group name field -- 15 length
 func validateGeneral(try string) bool {
   regex := regexp.MustCompile(`[^a-zA-Z0-9]`)
-  return !regex.MatchString(try)
+  return !regex.MatchString(try) && len(string) < 15
 }
