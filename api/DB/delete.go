@@ -78,10 +78,12 @@ func DeletePost(postID, userID bson.ObjectId) error {
   db := Connection.DB("dartboard")
 
   //post that will be populated by thread head
-  var post models.Post
+  var post struct {
+    AuthorId bson.ObjectId `bson:"authorId"`
+  }
 
   //verify author by head post for threads
-  if err := db.C("posts").Find(bson.M{"_id": postID}).One(&post); err != nil {
+  if err := db.C("posts").Find(bson.M{"_id": postID}).Select(bson.M{"authorId": 1}).One(&post); err != nil {
     return err
   }
 

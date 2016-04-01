@@ -11,13 +11,13 @@
 package routes
 
 import (
-  "github.com/ahermida/dartboardAPI/api/Util"
-  "fmt"
-  "github.com/ahermida/dartboardAPI/api/Models"
-  "net/http"
-  "encoding/json"
-  "gopkg.in/mgo.v2/bson"
-  "github.com/ahermida/dartboardAPI/api/DB"
+    "github.com/ahermida/dartboardAPI/api/Util"
+    "fmt"
+    "github.com/ahermida/dartboardAPI/api/Models"
+    "net/http"
+    "encoding/json"
+    "gopkg.in/mgo.v2/bson"
+    "github.com/ahermida/dartboardAPI/api/DB"
 )
 
 // Routes with /api/ prefix
@@ -99,7 +99,7 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(filledThread); err != nil {
-    http.Error(res, http.StatusText(400), 400)
+    http.Error(res, http.StatusText(500), 500)
     return
   }
 }
@@ -107,8 +107,8 @@ func getThread(res http.ResponseWriter, req *http.Request) {
 // handle POST /thread/modify
 func createThread(res http.ResponseWriter, req *http.Request) {
   var reqBody models.NewThread
-  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
-    http.Error(res, http.StatusCode(400), 400)
+  if err := json.NewDecoder(req.Body).Decode(&reqBody); err != nil {
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 
@@ -117,37 +117,62 @@ func createThread(res http.ResponseWriter, req *http.Request) {
 
   //check if we're allowed to create this thread
   if !db.IsMember(reqBody.Group, id) {
-    http.Error(res, http.StatusCode(401), 401)
+    http.Error(res, http.StatusText(401), 401)
     return
   }
 
   //maybe we should make sure that author is the same as username
-  if !validateGeneral(reqBody.author) {
-    http.Error(res, http.StatusCode(400), 400)
-    return
-  }
-  //now we're allowed so let's make it
-  post := db.CreateHeadPost(reqBody.Author, reqBody.Body, reqBody.Content, bson.ObjectIdHex(id))
-  if err := CreateThread(reqBody.Group, reqBody.Anonymous, post); err != nil {
-    http.Error(res, http.StatusCode(500), 500)
+  if !validateGeneral(reqBody.Author) {
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 
-  //success
-  res.WriteHeader(http.StatusNoContent)
+  //if author doesn't have a valid Id...
+  if id == "" {
+
+    //make sure author gets their id
+    id = bson.NewObjectId().Hex()
+  }
+
+  //now we're allowed so let's make it
+  post := db.CreateHeadPost(reqBody.Author, reqBody.Body, reqBody.Content, bson.ObjectIdHex(id))
+  if err := db.CreateThread(reqBody.Group, reqBody.Anonymous, post); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //send is JSON to be sent
+  send := &models.SendPost{
+    Id: id, //send user's id
+  }
+
+  //onward
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if errSending := json.NewEncoder(res).Encode(send); errSending != nil {
+    http.Error(res, http.StatusText(500), 500)
+  }
 }
 
 //handle DELETE /thread/modify
 func removeThread(res http.ResponseWriter, req *http.Request) {
   var reqBody models.RemoveThread
-  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
-    http.Error(res, http.StatusCode(400), 400)
+  if err := json.NewDecoder(req.Body).Decode(&reqBody); err != nil {
+    http.Error(res, http.StatusText(400), 400)
     return
   }
+
+  //grab user id
   id := util.GetId(req)
+
+  //if we're not signed in, then we're deleting an anon post
+  if id == "" {
+    id = reqBody.Id
+  }
+
   err := db.DeleteThread(bson.ObjectIdHex(reqBody.Thread), bson.ObjectIdHex(id))
   if err != nil {
-    http.Error(res, http.StatusCode(401), 401)
+    http.Error(res, http.StatusText(401), 401)
     return
   }
   //else we're all good!
@@ -156,36 +181,121 @@ func removeThread(res http.ResponseWriter, req *http.Request) {
 
 //handle POST /thread/post
 func createPost(res http.ResponseWriter, req *http.Request) {
+
+  //make room for post
   var reqBody models.NewPost
-  if err := json.NewDecoder(req).Decode(&resBody); err != nil {
-    http.Error(res, http.StatusCode(400), 400)
+  if err := json.NewDecoder(req.Body).Decode(&reqBody); err != nil {
+    http.Error(res, http.StatusText(400), 400)
     return
   }
+
+  //get user's id
   id := util.GetId(req)
-  grp := db.GetThreadParent(req.Thread)
+
+  //check if we're posting anonymously
+  if id == "" {
+
+    //for anon posts
+    id = bson.NewObjectId().Hex()
+  }
+  grp := db.GetThreadParent(reqBody.Thread)
   if !db.IsMember(grp, id) {
-    http.Error(res, http.StatusCode(401), 401)
+    http.Error(res, http.StatusText(401), 401)
     return
   }
+
+  //convert responseTo list to ObjectIds
   responseTo := make([]bson.ObjectId, 0)
   for _, postId := range reqBody.ResponseTo {
     responseTo = append(responseTo, bson.ObjectIdHex(postId))
   }
-  
-  //convert responseTo list to ObjectIds
+
+  //maybe we should make sure that author is the same as username
+  if !validateGeneral(reqBody.Author) {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //get ID's
+  usrId := bson.ObjectIdHex(id)
+  thrdId := bson.ObjectIdHex(reqBody.Thread)
 
   //CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string)
+  _, err := db.CreatePost(usrId, thrdId, responseTo, reqBody.Author, reqBody.Body, reqBody.Content)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
 
-  db.CreatePost()
-  fmt.Fprintf(res, "Admin Test Passed!")
+  //send is JSON to be sent
+  send := &models.SendPost{
+    Id: id, //send user's id -- so it can be removed
+  }
+
+  //onward
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if errSending := json.NewEncoder(res).Encode(send); errSending != nil {
+    http.Error(res, http.StatusText(500), 500)
+  }
 }
 
 //handle PUT /thread/post
 func editPost(res http.ResponseWriter, req *http.Request) {
-  fmt.Fprintf(res, "Admin Test Passed!")
+  var request models.EditPost
+  if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //grab user id
+  id := util.GetId(req)
+
+  //if we're not signed in, then we're deleting an anon post
+  if id == "" {
+    id = request.Id
+  }
+
+  //run edit
+  err := db.EditPost(request.Body, bson.ObjectIdHex(request.Post), bson.ObjectIdHex(id))
+  if err != nil {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //else we're clear to change the post
+  res.WriteHeader(http.StatusNoContent)
 }
 
 //handle DELETE /thread/post
 func removePost(res http.ResponseWriter, req *http.Request) {
-  fmt.Fprintf(res, "Admin Test Passed!")
+
+  //Handle Post
+  var request models.DeletePost
+
+  //decode json into request
+  if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //grab user id
+  id := util.GetId(req)
+
+  //if we're not signed in, then we're deleting an anon post
+  if id == "" {
+    id = request.Id
+  }
+
+  //run edit
+  err := db.RemovePost(bson.ObjectIdHex(request.Post), bson.ObjectIdHex(id))
+
+  //if err is not nil, respond with that
+  if err != nil {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //all good, so give no content status
+  res.WriteHeader(http.StatusNoContent)
 }

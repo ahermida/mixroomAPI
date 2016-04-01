@@ -99,7 +99,7 @@ func GetId(req *http.Request) string {
   } else {
 
     //check token that we got
-    token, err := util.CheckToken(userToken)
+    token, err := CheckToken(userToken)
 
     //if nothing went wrong
     if err != nil || !token.Valid {

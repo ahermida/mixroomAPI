@@ -58,9 +58,11 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
     Group: group,
   }
 
+  mId := bson.NewObjectId()
   //create mthread -- for view
   mthread := &models.Mthread{
-    Id: bson.NewObjectId(),
+    Id: mId,
+    SId: mId.Hex(),
     Created: thread.Created,
     Thread: thread.Id,
     Head: post,

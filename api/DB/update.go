@@ -45,7 +45,7 @@ func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) 
   if usr.Password != oldPassword {
     return errors.New("Passwords have to match.")
   }
-  
+
   //setup change -- modifying the password
   change := bson.M{"$set": bson.M{"password" : newPassword}}
 
@@ -198,13 +198,28 @@ func RemoveUsername(username string, user bson.ObjectId) error {
   return nil
 }
 
-
-
 //[UPDATE] change the text for a given post (id)
-func EditPost(text string, post bson.ObjectId) error {
+func EditPost(text string, post, user bson.ObjectId) error {
 
   //get proper DB
   db := Connection.DB("dartboard")
+
+  //check if user is author of post
+  var getPost struct {
+    AuthorId bson.ObjectId `bson:"authorId"`
+  }
+
+  //we have to make sure that we're the author
+  if err := db.C("posts").Find(bson.M{"_id": post}).Select(bson.M{"author": 1}).One(&getPost); err != nil {
+
+    //if there's an error return it
+    return err
+  }
+
+  //check if our user has the capability of removing this post
+  if getPost.AuthorId != user {
+    return errors.New("User doesn't have the authorization to edit this request.")
+  }
 
   //setup change -- modifying the password
   change := bson.M{"$set": bson.M{"body" : text}}

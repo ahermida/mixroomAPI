@@ -9,8 +9,13 @@
 package routes
 
 import (
-    "net/http"
+    "github.com/ahermida/dartboardAPI/api/Util"
     "fmt"
+    "github.com/ahermida/dartboardAPI/api/Models"
+    "net/http"
+    "encoding/json"
+    "gopkg.in/mgo.v2/bson"
+    "github.com/ahermida/dartboardAPI/api/DB"
 )
 
 // Routes with /users/ prefix
@@ -23,10 +28,10 @@ func init() {
   UserMux.HandleFunc("/user/info", getUser)
 
   //POST & PUT add and removed saved
-  UserMux.HandleFunc("/user/saved", register)
+  UserMux.HandleFunc("/user/saved", saved)
 
   //POST get user's saved threads
-  UserMux.HandleFunc("/user/threads", getUserThreads)
+  UserMux.HandleFunc("/user/threads", threads)
 
   //POST add a username, PUT to change it, DELETE to remove it
   UserMux.HandleFunc("/user/username", username)
@@ -39,7 +44,7 @@ func init() {
    Route handlers for User Routes
 */
 
-// Handle /user/userID
+// POST Handle /user/info
 func getUser(res http.ResponseWriter, req *http.Request) {
   if req.Method != "POST" {
     http.Error(res, http.StatusText(405), 405)
@@ -48,8 +53,20 @@ func getUser(res http.ResponseWriter, req *http.Request) {
   fmt.Fprintf(res, "Test Passed!")
 }
 
-// Handle /user/userID
-func getUserThreads(res http.ResponseWriter, req *http.Request) {
+// Handle /user/saved
+func saved(res http.ResponseWriter, req *http.Request) {
+  switch req.Method {
+  case "POST":
+    addSaved(res, req)
+  case "PUT":
+    removeSaved(res, req)
+  default:
+    http.Error(res, http.StatusText(405), 405)
+  }
+}
+
+// POST Handle /user/threads -- get user's threads
+func threads(res http.ResponseWriter, req *http.Request) {
   if req.Method != "POST" {
     http.Error(res, http.StatusText(405), 405)
     return
@@ -57,20 +74,55 @@ func getUserThreads(res http.ResponseWriter, req *http.Request) {
   fmt.Fprintf(res, "Test Passed!")
 }
 
-// Handle /user/userID
+// Handle /user/username
 func username(res http.ResponseWriter, req *http.Request) {
-  if req.Method != "POST" {
+  switch req.Method {
+  case "POST":
+    addUsername(res, req)
+  case "PUT":
+    changeUsername(res, req)
+  case "DELETE":
+    removeUsername(res, req)
+  default:
     http.Error(res, http.StatusText(405), 405)
-    return
   }
-  fmt.Fprintf(res, "Test Passed!")
 }
 
 // Handle /user/userID
 func friends(res http.ResponseWriter, req *http.Request) {
-  if req.Method != "POST" {
+  switch req.Method {
+  case "POST":
+    addFriend(res, req)
+  case "PUT":
+    acceptFriend(res, req)
+  case "DELETE":
+    removeFriend(res, req)
+  default:
     http.Error(res, http.StatusText(405), 405)
-    return
   }
-  fmt.Fprintf(res, "Test Passed!")
+}
+
+// POST Handle adding saved thread
+func addSaved(res http.ResponseWriter, req *http.Request) {
+}
+// PUT Handle
+func removeSaved(res http.ResponseWriter, req *http.Request) {
+}
+// POST Handle
+func addUsername(res http.ResponseWriter, req *http.Request) {
+}
+// PUT Handle
+func changeUsername(res http.ResponseWriter, req *http.Request) {
+}
+// DELETE Handle
+func removeUsername(res http.ResponseWriter, req *http.Request) {
+}
+// POST Handle
+func addFriend(res http.ResponseWriter, req *http.Request) {
+}
+// PUT Handle
+func acceptFriend(res http.ResponseWriter, req *http.Request) {
+}
+// DELETE Handle
+func removeFriend(res http.ResponseWriter, req *http.Request) {
 }

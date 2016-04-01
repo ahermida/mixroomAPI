@@ -18,7 +18,6 @@ import (
     "crypto/sha256"
     "encoding/json"
     "encoding/base64"
-
 )
 
 // Routes with /users/ prefix

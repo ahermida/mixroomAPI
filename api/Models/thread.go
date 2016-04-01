@@ -45,11 +45,12 @@ type GetThread struct {
 type NewThread struct {
   Group     string `json:"group"`
   Body      string `json:"body"`
-  Username  string `json:"username"`
+  Author    string `json:"author"`
   Content   string `json:"content"`
   Anonymous bool   `json:"anonymous"`
 }
 
 type RemoveThread struct {
   Thread string `json:"thread"`
+  Id     string `json:"id,omitempty"`
 }
