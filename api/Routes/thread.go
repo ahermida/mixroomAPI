@@ -12,7 +12,6 @@ package routes
 
 import (
     "github.com/ahermida/dartboardAPI/api/Util"
-    "fmt"
     "github.com/ahermida/dartboardAPI/api/Models"
     "net/http"
     "encoding/json"
@@ -288,7 +287,7 @@ func removePost(res http.ResponseWriter, req *http.Request) {
   }
 
   //run edit
-  err := db.RemovePost(bson.ObjectIdHex(request.Post), bson.ObjectIdHex(id))
+  err := db.DeletePost(bson.ObjectIdHex(request.Post), bson.ObjectIdHex(id))
 
   //if err is not nil, respond with that
   if err != nil {

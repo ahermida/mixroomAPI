@@ -80,10 +80,11 @@ func DeletePost(postID, userID bson.ObjectId) error {
   //post that will be populated by thread head
   var post struct {
     AuthorId bson.ObjectId `bson:"authorId"`
+    Thread bson.ObjectId `bson:"thread"`
   }
 
   //verify author by head post for threads
-  if err := db.C("posts").Find(bson.M{"_id": postID}).Select(bson.M{"authorId": 1}).One(&post); err != nil {
+  if err := db.C("posts").Find(bson.M{"_id": postID}).Select(bson.M{"authorId": 1, "thread": 1}).One(&post); err != nil {
     return err
   }
 

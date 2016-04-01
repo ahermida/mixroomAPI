@@ -10,11 +10,10 @@ package routes
 
 import (
     "github.com/ahermida/dartboardAPI/api/Util"
-    "fmt"
     "github.com/ahermida/dartboardAPI/api/Models"
     "net/http"
     "encoding/json"
-    "gopkg.in/mgo.v2/bson"
+  //  "gopkg.in/mgo.v2/bson"
     "github.com/ahermida/dartboardAPI/api/DB"
 )
 
@@ -24,8 +23,8 @@ var UserMux = http.NewServeMux()
 // Setup Routes with Mux
 func init() {
 
-  //POST get user info
-  UserMux.HandleFunc("/user/info", getUser)
+  //GET get user info
+  UserMux.HandleFunc("/user/", getUser)
 
   //POST & PUT add and removed saved
   UserMux.HandleFunc("/user/saved", saved)
@@ -36,7 +35,10 @@ func init() {
   //POST add a username, PUT to change it, DELETE to remove it
   UserMux.HandleFunc("/user/username", username)
 
-  //POST add a friend -- creates request, PUT accept it, DELETE to remove it,
+  //GET get all notifications
+  UserMux.HandleFunc("/user/notifications", notifications)
+
+  //GET -- gets friends list, POST add a friend -- creates request, PUT accept it, DELETE to remove it,
   UserMux.HandleFunc("/user/friends", friends)
 }
 
@@ -44,13 +46,31 @@ func init() {
    Route handlers for User Routes
 */
 
-// POST Handle /user/info
+// GET Handle /user/
 func getUser(res http.ResponseWriter, req *http.Request) {
-  if req.Method != "POST" {
+  if req.Method != "GET" {
     http.Error(res, http.StatusText(405), 405)
     return
   }
-  fmt.Fprintf(res, "Test Passed!")
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+  user, err := db.GetUser(id)
+  if err != nil {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //else send back user which is already json formatted
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if err := json.NewEncoder(res).Encode(user); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+  }
 }
 
 // Handle /user/saved
@@ -71,7 +91,40 @@ func threads(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(405), 405)
     return
   }
-  fmt.Fprintf(res, "Test Passed!")
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  var thread models.GetUserFeed
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&thread); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //get group
+  group, err := db.GetGroup(id, thread.Page)
+  if err != nil {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //get json struct that we're gonna send over
+  grp := &models.SendGroup{
+    Threads: group,
+  }
+
+  //send back no error response
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  //send over data
+  if err := json.NewEncoder(res).Encode(&grp); err != nil {
+      http.Error(res, http.StatusText(500), 500)
+  }
 }
 
 // Handle /user/username
@@ -125,4 +178,7 @@ func acceptFriend(res http.ResponseWriter, req *http.Request) {
 }
 // DELETE Handle
 func removeFriend(res http.ResponseWriter, req *http.Request) {
+}
+// Handle
+func notifications(res http.ResponseWriter, req *http.Request) {
 }

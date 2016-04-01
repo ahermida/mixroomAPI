@@ -146,9 +146,25 @@ func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
   return resThread, nil
 }
 
-//[READ] gets user data -- posts, watchlist, thread likes, friends
-func GetUser(userID string) {
-  //call DB
+//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
+func GetUser(user string) (*models.GetUser, error) {
+  db := Connection.DB("dartboard")
+  usr := bson.ObjectIdHex(user)
+  var userData struct {
+    Email         string          `bson:"email"`
+    Username      string          `bson:"username"`
+    Notifications []bson.ObjectId `bson:"notifications"`
+  }
+  fields := bson.M{"email": 1, "username": 1, "notifications": 1}
+  if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
+    return nil, err
+  }
+  getUser := &models.GetUser{
+    Email: userData.Email,
+    Username: userData.Username,
+    Notifications: len(userData.Notifications),
+  }
+  return getUser, nil
 }
 
 //[READ] compares the user & hashed password given to the one in the DB

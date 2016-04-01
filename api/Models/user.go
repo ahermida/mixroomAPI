@@ -51,6 +51,19 @@ type CreateUser struct {
   Password string `json:"password"`
 }
 
+type GetUser struct {
+  Username      string `json:"username"`
+  Email         string `json:"email"`
+  Notifications int    `json:"notifications"`
+}
+
+type GetUserFeed struct {
+  Page int `json:"page"`
+}
+type RemoveFriend struct {
+  friend string `json:"username"`
+}
+
 type AuthUser struct {
   Email    string `json:"email"`
   Password string `json:"password"`
