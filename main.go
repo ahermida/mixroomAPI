@@ -5,9 +5,9 @@ package main
 
 import (
   "fmt"
-  "github.com/ahermida/dartboardAPI/api/Server" //package with server
-  "github.com/ahermida/dartboardAPI/api/Config" //package with port
-  "github.com/ahermida/dartboardAPI/api/DB" //package with DB
+  "github.com/ahermida/dartboardAPI/api/Server"
+  "github.com/ahermida/dartboardAPI/api/Config"
+  "github.com/ahermida/dartboardAPI/api/DB"
   "os"
   "runtime"
   "syscall"
