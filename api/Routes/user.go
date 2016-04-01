@@ -14,7 +14,6 @@ import (
     "net/http"
     "gopkg.in/mgo.v2/bson"
     "encoding/json"
-  //  "gopkg.in/mgo.v2/bson"
     "github.com/ahermida/dartboardAPI/api/DB"
 )
 
@@ -349,7 +348,7 @@ func notifications(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(500), 500)
     return
   }
-  
+
   sendNotes := &models.GetNotifications{
     Notifications: notes,
   }

@@ -4,12 +4,9 @@
 package db
 
 import (
-  //"github.com/ahermida/dartboardAPI/api/Config"
-//  "gopkg.in/mgo.v2"
   "errors"
   "gopkg.in/mgo.v2/bson"
   "fmt"
-//  "github.com/ahermida/dartboardAPI/api/Models"
 )
 
 //[UPDATE] activates account (when email is verified)
@@ -421,7 +418,7 @@ func AddFriend(friend, user bson.ObjectId) error {
 
   //get new friend's new username, let them know that we accepted their request
   name := GetUsername(friend)
-  if name != "" {
+  if name == "" {
     return errors.New("Issue getting username for a given _id")
   }
 

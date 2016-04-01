@@ -4,8 +4,6 @@
 package db
 
 import (
-  //"github.com/ahermida/dartboardAPI/api/Config"
-//  "gopkg.in/mgo.v2"
   "errors"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
