@@ -34,6 +34,7 @@ type User struct {
   Password      string          `bson:"password"`
   Friends       []bson.ObjectId `bson:"friends"`
   Notifications []bson.ObjectId `bson:"notifications"`
+  Unread        int             `bson:"unread"`
   Requests      []bson.ObjectId `bson:"requests"`
   Activated     bool            `bson:"activated"`
   Suspended     bool            `bson:"suspended"`
@@ -52,16 +53,18 @@ type CreateUser struct {
 }
 
 type GetUser struct {
-  Username      string `json:"username"`
-  Email         string `json:"email"`
-  Notifications int    `json:"notifications"`
+  Username      string `bson:"username" json:"username"`
+  Email         string `bson:"email" json:"email"`
+  Unread        int    `bson:"unread" json:"unread"`
 }
 
 type GetUserFeed struct {
   Page int `json:"page"`
 }
-type RemoveFriend struct {
-  friend string `json:"username"`
+
+type Friend struct {
+  Username string `json:"username"`
+  Friend string `json:"friend"`
 }
 
 type AuthUser struct {
@@ -76,4 +79,12 @@ type AuthedUser struct {
 type ChangePW struct {
   Password string `json:"password"`
   NewPassword string `json:"newPassword"`
+}
+
+type Saved struct {
+  Thread string `json:"thread"`
+}
+
+type Username struct {
+  Username string `json:"username"`
 }

@@ -74,7 +74,7 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(500), 500)
     return
   }
-  
+
   //user _id in hex
   id := util.GetId(req)
 
@@ -106,7 +106,7 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   //send over data
-  if err := json.NewEncoder(res).Encode(&grp); err != nil {
+  if err := json.NewEncoder(res).Encode(grp); err != nil {
       http.Error(res, http.StatusText(500), 500)
   }
 }

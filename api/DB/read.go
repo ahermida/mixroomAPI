@@ -98,6 +98,53 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
   return threads, nil
 }
 
+//[READ]
+func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
+  db := Connection.DB("dartboard")
+  var user struct {
+    Saved []bson.ObjectId `bson:"saved"`
+  }
+  if err := db.C("users").Find(bson.M{"_id": userId}).Select(bson.M{"saved": 1}).One(&user); err != nil {
+    return nil, err
+  }
+  //make slice
+  threads := make([]models.Mthread, 0)
+  for _, save := range user.Saved {
+    var item models.Mthread
+    err := db.C("mthreads").Find(bson.M{"_id": save}).One(&item)
+    if err != nil {
+      return nil, err
+    }
+    //add thread to grouping
+    threads = append(threads, item)
+  }
+  return threads, nil
+}
+
+//[READ]
+func GetNotifications(userId bson.ObjectId) ([]models.Notification, error){
+  db := Connection.DB("dartboard")
+  var user struct {
+    Notifications []bson.ObjectId `bson:"notifications"`
+  }
+  if err := db.C("users").Find(bson.M{"_id": userId}).Select(bson.M{"notifications": 1}).One(&user); err != nil {
+    return nil, err
+  }
+
+  //make slice
+  notifications := make([]models.Notification, 0)
+  for _, note := range user.Notifications {
+    var noted models.Notification
+    err := db.C("notifications").Find(bson.M{"_id": note}).One(&noted)
+    if err != nil {
+      return nil, err
+    }
+    //add notification to slice
+    notifications = append(notifications, noted)
+  }
+  return notifications, nil
+}
+
 //[READ] gets all posts for a given thread
 func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
 
@@ -150,21 +197,13 @@ func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
 func GetUser(user string) (*models.GetUser, error) {
   db := Connection.DB("dartboard")
   usr := bson.ObjectIdHex(user)
-  var userData struct {
-    Email         string          `bson:"email"`
-    Username      string          `bson:"username"`
-    Notifications []bson.ObjectId `bson:"notifications"`
-  }
-  fields := bson.M{"email": 1, "username": 1, "notifications": 1}
+  var userData models.GetUser
+  fields := bson.M{"email": 1, "username": 1, "unread": 1}
   if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
     return nil, err
   }
-  getUser := &models.GetUser{
-    Email: userData.Email,
-    Username: userData.Username,
-    Notifications: len(userData.Notifications),
-  }
-  return getUser, nil
+
+  return &userData, nil
 }
 
 //[READ] compares the user & hashed password given to the one in the DB
@@ -210,4 +249,25 @@ func GetFriends(author string) ([]bson.ObjectId, error) {
 
   //all is well, so return nil error and friends
   return people.Friends, nil
+}
+
+//[READ] gets user's friends -- resolving "joins"
+func GetUsername(id bson.ObjectId) string {
+
+  //grab proper db
+  db := Connection.DB("dartboard").C("users")
+
+  //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
+  var person struct{
+    Username string
+  }
+
+  //get friends
+  err := db.Find(bson.M{"_id": id}).Select(bson.M{"username" : 1}).One(&person)
+  if err != nil {
+    return ""
+  }
+
+  //all is well, so return nil error and friends
+  return person.Username
 }

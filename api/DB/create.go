@@ -4,6 +4,7 @@
 package db
 
 import (
+  "fmt"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
 )
@@ -23,6 +24,7 @@ func CreateUser(email, username, password string) (string, error) {
     Password:      password,
     Friends:       make([]bson.ObjectId, 0),
     Notifications: make([]bson.ObjectId, 0),
+    Unread:        0,
     Requests:      make([]bson.ObjectId, 0),
     Activated:     false,
     Suspended:     false,
@@ -86,6 +88,12 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
 
   //add mthread to group, this is where we'll query for mthreads
   if err := db.C(group).Insert(mthread); err != nil {
+    //if there's an error on inserting, return the error
+    return err
+  }
+
+  //insert mthread to their own collection, this will allow for easy browsing of old saved threads
+  if err := db.C("mthreads").Insert(mthread); err != nil {
     //if there's an error on inserting, return the error
     return err
   }
@@ -232,4 +240,62 @@ func GroupExists(group string) bool {
 
   //if there are any groups with that name, it should be 1
   return count == 1
+}
+
+func CreateNotification(id bson.ObjectId, link, text string) error {
+  db := Connection.DB("dartboard")
+  note := &models.Notification{
+    Id: bson.NewObjectId(),
+    Recipient: id,
+    Link: link,
+    Text: text,
+  }
+  change := bson.M{"$addToSet": bson.M{"notifications": note.Id}}
+  if err := db.C("users").Update(bson.M{"_id": id}, change); err != nil {
+    return err
+  }
+  incUnread := bson.M{"$inc": bson.M{"unread": 1}}
+  if err := db.C("users").Update(bson.M{"_id": id}, incUnread); err != nil {
+    return err
+  }
+  if err := db.C("notifications").Insert(note); err != nil {
+    return err
+  }
+
+  //everything went as planned
+  return nil
+}
+
+func RequestFriend(user bson.ObjectId, username, friend string) error {
+  db := Connection.DB("dartboard")
+
+  var newFriend struct {
+    Id bson.ObjectId
+  }
+  q := db.C("users").Find(bson.M{"username": friend})
+  if err := q.Select(bson.M{"_id": 1}).One(&newFriend); err != nil {
+    return err
+  }
+
+  //setup change
+  change := bson.M{"$addToSet": bson.M{"requests": user}}
+
+  //execute change
+  if err := db.C("users").Update(bson.M{"_id": newFriend.Id}, change); err != nil {
+    return err
+  }
+
+  //note that we made -- USE OUR OWN MARKUP HERE so we can style it appropriately
+  note := fmt.Sprintf("You have a new friend request from %s", username)
+
+  //create link that they can click on to view our profile
+  link := fmt.Sprintf("localhost:8080/user/%s", username)
+
+  //add notification to new friend
+  if err := CreateNotification(newFriend.Id, link, note); err != nil {
+    return err
+  }
+
+  //everything went as planned
+  return nil
 }

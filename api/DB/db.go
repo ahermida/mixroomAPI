@@ -6,6 +6,7 @@
 package db
 
 import (
+  "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Config"
   "log"
   "gopkg.in/mgo.v2"
@@ -23,6 +24,7 @@ func init() {
   Connection.SetMode(mgo.Monotonic, true)
   ensureUserIndex()
   ensureGroupIndex()
+  //reserveNamespaces()
 }
 
 //Makes Sure that Users cannot be duplicates
@@ -60,5 +62,13 @@ func ensureGroupIndex() {
   //index needs to be unique
   if err != nil {
     log.Panic(err)
+  }
+}
+
+//make sure that no groups can be made for "users", "threads", "posts", "groups", or "mthreads"
+func reserveNamespaces() {
+  reserved := []string{"users", "threads", "posts", "groups", "mthreads"}
+  for _, namespace := range reserved {
+    CreateGroup(namespace, bson.NewObjectId(), true)
   }
 }

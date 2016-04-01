@@ -12,6 +12,7 @@ import (
     "github.com/ahermida/dartboardAPI/api/Util"
     "github.com/ahermida/dartboardAPI/api/Models"
     "net/http"
+    "gopkg.in/mgo.v2/bson"
     "encoding/json"
   //  "gopkg.in/mgo.v2/bson"
     "github.com/ahermida/dartboardAPI/api/DB"
@@ -76,10 +77,12 @@ func getUser(res http.ResponseWriter, req *http.Request) {
 // Handle /user/saved
 func saved(res http.ResponseWriter, req *http.Request) {
   switch req.Method {
+  case "GET":
+    getSaved(res, req)
   case "POST":
-    addSaved(res, req)
+    savedToggle(res, req)
   case "PUT":
-    removeSaved(res, req)
+    savedToggle(res, req)
   default:
     http.Error(res, http.StatusText(405), 405)
   }
@@ -121,24 +124,57 @@ func threads(res http.ResponseWriter, req *http.Request) {
   //send back no error response
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
+
   //send over data
-  if err := json.NewEncoder(res).Encode(&grp); err != nil {
+  if err := json.NewEncoder(res).Encode(grp); err != nil {
       http.Error(res, http.StatusText(500), 500)
   }
 }
 
 // Handle /user/username
 func username(res http.ResponseWriter, req *http.Request) {
-  switch req.Method {
-  case "POST":
-    addUsername(res, req)
-  case "PUT":
-    changeUsername(res, req)
-  case "DELETE":
-    removeUsername(res, req)
-  default:
+  if req.Method == "GET" {
     http.Error(res, http.StatusText(405), 405)
+    return
   }
+
+  var user models.Username
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&user); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //if it's a bad input, return 400
+  if !validateGeneral(user.Username) {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+  var err error
+  if req.Method == "POST" {
+    err = db.AddUsername(user.Username, bson.ObjectIdHex(id))
+  }
+  if req.Method == "PUT" {
+    err = db.ChangeUsername(user.Username, bson.ObjectIdHex(id))
+  }
+  if req.Method == "DELETE" {
+    err = db.RemoveUsername(user.Username, bson.ObjectIdHex(id))
+  }
+
+  if err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //else we're all good and give a no content code
+  res.WriteHeader(http.StatusNoContent)
 }
 
 // Handle /user/userID
@@ -155,24 +191,97 @@ func friends(res http.ResponseWriter, req *http.Request) {
   }
 }
 
-// POST Handle adding saved thread
-func addSaved(res http.ResponseWriter, req *http.Request) {
-}
 // PUT Handle
-func removeSaved(res http.ResponseWriter, req *http.Request) {
+func savedToggle(res http.ResponseWriter, req *http.Request) {
+  var save models.Saved
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&save); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //actually add it -- ex. of the 'un- ification of language'
+  var err error
+  if req.Method == "POST" {
+    err = db.SaveThread(bson.ObjectIdHex(save.Thread), bson.ObjectIdHex(id));
+  }
+  if req.Method == "DELETE" {
+    err = db.UnsaveThread(bson.ObjectIdHex(save.Thread), bson.ObjectIdHex(id));
+  }
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //return err if there's a problem
+  res.WriteHeader(http.StatusNoContent)
 }
-// POST Handle
-func addUsername(res http.ResponseWriter, req *http.Request) {
+
+// GET Handle getting saved threads -- kinda like group
+func getSaved(res http.ResponseWriter, req *http.Request) {
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //get saved -- GetSaved(userId bson.ObjectId)
+  saved, err := db.GetSaved(bson.ObjectIdHex(id))
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //set up response struct
+  response := &models.SendGroup{
+    Threads: saved,
+  }
+
+  //send back json formatted threads
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  //send over data
+  if err := json.NewEncoder(res).Encode(response); err != nil {
+      http.Error(res, http.StatusText(500), 500)
+  }
 }
-// PUT Handle
-func changeUsername(res http.ResponseWriter, req *http.Request) {
-}
-// DELETE Handle
-func removeUsername(res http.ResponseWriter, req *http.Request) {
-}
-// POST Handle
+
+// POST Handle -- notifications are going to be a link with text
 func addFriend(res http.ResponseWriter, req *http.Request) {
+
+  //handle post with friends name
+  var frd models.Friend
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&frd); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+  //RequestFriend(user bson.ObjectId, username, friend string)
+  err := db.RequestFriend(bson.ObjectIdHex(id), frd.Username, frd.Friend)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //if all goes well, we should end here
+  res.WriteHeader(http.StatusNoContent)
 }
+
 // PUT Handle
 func acceptFriend(res http.ResponseWriter, req *http.Request) {
 }

@@ -8,6 +8,7 @@ import (
 //  "gopkg.in/mgo.v2"
   "errors"
   "gopkg.in/mgo.v2/bson"
+  "fmt"
 //  "github.com/ahermida/dartboardAPI/api/Models"
 )
 
@@ -361,7 +362,7 @@ func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
 }
 
 //[UPDATE] pushes a thread to a user's watchlist
-func WatchThread(thread, user bson.ObjectId) error {
+func SaveThread(thread, user bson.ObjectId) error {
 
   //get proper DB
   db := Connection.DB("dartboard")
@@ -377,7 +378,7 @@ func WatchThread(thread, user bson.ObjectId) error {
 }
 
 //[UPDATE] removes a thread from a user's watchlist
-func UnwatchThread(thread, user bson.ObjectId) error {
+func UnsaveThread(thread, user bson.ObjectId) error {
 
   //get proper DB
   db := Connection.DB("dartboard")
@@ -398,9 +399,9 @@ func AddFriend(friend, user bson.ObjectId) error {
   //get proper DB
   db := Connection.DB("dartboard")
 
-  //setup change -- add friend to list -- do same for friend
+  //setup changes -- add friend to list -- do same for friend
   change := bson.M{"$addToSet": bson.M{"friends" : friend}}
-
+  rmRequest := bson.M{"$pull": bson.M{"requests": friend}}
   friendChange := bson.M{"$addToSet": bson.M{"friends": user}}
 
   //run update to user (found by _id)
@@ -408,8 +409,30 @@ func AddFriend(friend, user bson.ObjectId) error {
     return err
   }
 
+  //run update to remove request from list
+  if err := db.C("users").Update(bson.M{"_id": user}, rmRequest); err != nil {
+    return err
+  }
+
   //run update to friend (found by _id)
   if err := db.C("users").Update(bson.M{"_id": friend}, friendChange); err != nil {
+    return err
+  }
+
+  //get new friend's new username, let them know that we accepted their request
+  name := GetUsername(friend)
+  if name != "" {
+    return errors.New("Issue getting username for a given _id")
+  }
+
+  //note that we made -- USE OUR OWN MARKUP HERE so we can style it appropriately
+  note := fmt.Sprintf("%s accepted your friend request", name)
+
+  //create link that they can click on to view our profile
+  link := fmt.Sprintf("localhost:8080/user/%s", name)
+
+  //add notification to new friend
+  if err := CreateNotification(friend, link, note); err != nil {
     return err
   }
 
