@@ -9,6 +9,44 @@ import (
   "github.com/ahermida/dartboardAPI/api/Models"
 )
 
+/**
+    GROUPS -------------------------------------------------------------
+ */
+
+//[READ] gets available threads for a given group on a particular page
+func GetGroup(group string, page int) ([]models.Mthread, error) {
+
+  //check if group exists
+  if !GroupExists(group) {
+
+    //if it doesn't, return an error
+    return nil, errors.New("Can't get a group that doens't exist.")
+  }
+  //get DB
+  db := Connection.DB("dartboard")
+
+  //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items
+  pipeline := []bson.M{bson.M{"$sort": bson.M{"created": -1 }},
+                        bson.M{"$limit": 30},
+                        bson.M{"$skip": page * 30}}
+
+  //set up Pipe to actually run query
+  pipe := db.C(group).Pipe(pipeline)
+
+  //slice of threads that will be populated by query
+  var threads []models.Mthread
+
+  //run it
+  if err:= pipe.All(&threads); err != nil {
+
+    //if something is wrong, return err
+    return nil, err
+  }
+
+  //else return the threads, and a nil error
+  return threads, nil
+}
+
 //[READ] gets group info -- meta info about group from group collection
 func CheckGroup(group string) (*models.Group, error) {
   db := Connection.DB("dartboard")
@@ -48,6 +86,58 @@ func IsMember(group string, user string) bool {
   return false
 }
 
+/**
+    THREADS -------------------------------------------------------------
+ */
+
+ //[READ] gets all posts for a given thread
+ func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
+
+   //call DB
+   db := Connection.DB("dartboard")
+
+   //thread model
+   var thread models.Thread
+
+   //get thread
+   if err := db.C("threads").FindId(threadID).One(&thread); err != nil {
+     return nil, err
+   }
+
+   //if thread is dead, don't return it.
+   if !thread.Alive {
+     return nil, errors.New("Couldn't get thread, it's dead")
+   }
+
+   //make new thread to be resolved
+   resThread := &models.ResThread{
+     Id: thread.Id,
+     Created: thread.Created,
+     Posts: make([]models.Post,0),
+     Alive: thread.Alive,
+     Group: thread.Group,
+   }
+
+   //add reply to each of the posts that it was to
+   for _, postId := range thread.Posts {
+
+     //make room for post
+     var post models.Post
+
+     //get post by ID
+     if err := db.C("posts").Find(bson.M{"_id": postId}).One(&post); err != nil {
+       //insert it, shouldn't result in error
+       return nil, err
+     }
+
+     //merge slices
+     resThread.Posts = append(resThread.Posts, post)
+   }
+
+   //return thread and nil error (nothing went wrong)
+   return resThread, nil
+ }
+
 //[READ] returns group that the given thead (hex string) belongs to
 func GetThreadParent(thread string) string {
   db := Connection.DB("dartboard")
@@ -62,39 +152,26 @@ func GetThreadParent(thread string) string {
   return thrd.Group
 }
 
-//[READ] gets available threads for a given group on a particular page
-func GetGroup(group string, page int) ([]models.Mthread, error) {
+/**
+    USER  -------------------------------------------------------------
+ */
 
-  //check if group exists
-  if !GroupExists(group) {
-
-    //if it doesn't, return an error
-    return nil, errors.New("Can't get a group that doens't exist.")
-  }
-  //get DB
+//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
+func GetUser(user string) (*models.GetUser, error) {
   db := Connection.DB("dartboard")
-
-  //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items
-  pipeline := []bson.M{bson.M{"$sort": bson.M{"created": -1 }},
-                        bson.M{"$limit": 30},
-                        bson.M{"$skip": page * 30}}
-
-  //set up Pipe to actually run query
-  pipe := db.C(group).Pipe(pipeline)
-
-  //slice of threads that will be populated by query
-  var threads []models.Mthread
-
-  //run it
-  if err:= pipe.All(&threads); err != nil {
-
-    //if something is wrong, return err
+  usr := bson.ObjectIdHex(user)
+  var userData models.GetUser
+  fields := bson.M{"email": 1, "username": 1, "unread": 1}
+  if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
     return nil, err
   }
 
-  //else return the threads, and a nil error
-  return threads, nil
+  return &userData, nil
 }
+
+/**
+    SAVED THREADS -------------------------------------------------------------
+ */
 
 //[READ]
 func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
@@ -118,6 +195,10 @@ func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
   }
   return threads, nil
 }
+
+/**
+    USER NOTIFICATIONS -------------------------------------------
+ */
 
 //[READ]
 func GetNotifications(userId bson.ObjectId) ([]models.Notification, error){
@@ -143,81 +224,9 @@ func GetNotifications(userId bson.ObjectId) ([]models.Notification, error){
   return notifications, nil
 }
 
-//[READ] gets all posts for a given thread
-func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
-
-  //call DB
-  db := Connection.DB("dartboard")
-
-  //thread model
-  var thread models.Thread
-
-  //get thread
-  if err := db.C("threads").FindId(threadID).One(&thread); err != nil {
-    return nil, err
-  }
-
-  //if thread is dead, don't return it.
-  if !thread.Alive {
-    return nil, errors.New("Couldn't get thread, it's dead")
-  }
-
-  //make new thread to be resolved
-  resThread := &models.ResThread{
-    Id: thread.Id,
-    Created: thread.Created,
-    Posts: make([]models.Post,0),
-    Alive: thread.Alive,
-    Group: thread.Group,
-  }
-
-  //add reply to each of the posts that it was to
-  for _, postId := range thread.Posts {
-
-    //make room for post
-    var post models.Post
-
-    //get post by ID
-    if err := db.C("posts").Find(bson.M{"_id": postId}).One(&post); err != nil {
-      //insert it, shouldn't result in error
-      return nil, err
-    }
-
-    //merge slices
-    resThread.Posts = append(resThread.Posts, post)
-  }
-
-  //return thread and nil error (nothing went wrong)
-  return resThread, nil
-}
-
-//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
-func GetUser(user string) (*models.GetUser, error) {
-  db := Connection.DB("dartboard")
-  usr := bson.ObjectIdHex(user)
-  var userData models.GetUser
-  fields := bson.M{"email": 1, "username": 1, "unread": 1}
-  if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
-    return nil, err
-  }
-
-  return &userData, nil
-}
-
-//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
-func GetIdFromUsername(username string) string {
-  db := Connection.DB("dartboard")
-
-  var userData struct {
-    Id bson.ObjectId
-  }
-  fields := bson.M{"_id": 1}
-  if err := db.C("users").Find(bson.M{"username": username}).Select(fields).One(&userData); err != nil {
-    return ""
-  }
-
-  return userData.Id.Hex()
-}
+/**
+    USER AUTH -------------------------------------------------------
+ */
 
 //[READ] compares the user & hashed password given to the one in the DB
 func LoginCheck(email, hashword string) (string, bool) {
@@ -242,6 +251,10 @@ func LoginCheck(email, hashword string) (string, bool) {
   //it's a match!
   return usr.Id.Hex(), true
 }
+
+/**
+    USER FRIENDS -------------------------------------------------------
+ */
 
 //[READ] gets user's friends -- resolving "joins"
 func GetFriends(author string) ([]bson.ObjectId, error) {
@@ -298,6 +311,10 @@ func GetFriendsJoined(id bson.ObjectId) ([]string, error) {
   return friends, nil
 }
 
+/**
+    USER UTIL -------------------------------------------------------
+ */
+
 //[READ] gets user's username
 func GetUsername(id bson.ObjectId) string {
 
@@ -317,4 +334,19 @@ func GetUsername(id bson.ObjectId) string {
 
   //all is well, so return nil error and friends
   return person.Username
+}
+
+//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
+func GetIdFromUsername(username string) string {
+  db := Connection.DB("dartboard")
+
+  var userData struct {
+    Id bson.ObjectId
+  }
+  fields := bson.M{"_id": 1}
+  if err := db.C("users").Find(bson.M{"username": username}).Select(fields).One(&userData); err != nil {
+    return ""
+  }
+
+  return userData.Id.Hex()
 }

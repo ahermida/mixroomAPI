@@ -9,6 +9,10 @@ import (
   "github.com/ahermida/dartboardAPI/api/Models"
 )
 
+/**
+    GROUPS -------------------------------------------------------------
+ */
+
 //[DELETE] remove a thread
 func DeleteGroup(group string, user bson.ObjectId) error {
 
@@ -42,6 +46,10 @@ func DeleteGroup(group string, user bson.ObjectId) error {
   return nil
 }
 
+/**
+    THREADS -------------------------------------------------------------
+ */
+
 //[DELETE] remove a thread
 func DeleteThread(threadID, userID bson.ObjectId) error {
 
@@ -69,6 +77,10 @@ func DeleteThread(threadID, userID bson.ObjectId) error {
   //nothing wrong -- so we return nil error (all good)
   return nil
 }
+
+/**
+    POSTS -------------------------------------------------------------
+ */
 
 //[DELETE] removes a post
 func DeletePost(postID, userID bson.ObjectId) error {
@@ -105,6 +117,10 @@ func DeletePost(postID, userID bson.ObjectId) error {
   //nothing wrong -- so we return nil error (all good)
   return nil
 }
+
+/**
+    USER -------------------------------------------------------------
+ */
 
 //[DELETE] actually deletes a user (for dev use only!)
 func RemoveUser(user bson.ObjectId) error {

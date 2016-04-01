@@ -8,42 +8,56 @@ import (
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
 )
+/**
+    GROUPS -------------------------------------------------------------
+ */
 
-//[CREATE] creates user in the Database with given email, username, and hashed password
-func CreateUser(email, username, password string) (string, error) {
-  //connect to appropriate DB
+//[CREATE] creates a group, rather, reserves a namespace for a group
+func CreateGroup(group string, user bson.ObjectId, private bool) error {
+  //get proper db
   db := Connection.DB("dartboard")
 
-  //create user struct
-  usr := &models.User{
-    Id:            bson.NewObjectId(),
-    Created:       bson.Now(),
-    Username:      username,
-    Usernames:     []string{username},
-  	Email:         email,
-    Password:      password,
-    Friends:       make([]bson.ObjectId, 0),
-    Notifications: make([]bson.ObjectId, 0),
-    Unread:        0,
-    Requests:      make([]bson.ObjectId, 0),
-    Activated:     false,
-    Suspended:     false,
-    Saved:         make([]bson.ObjectId, 0),
+  //create group with index options (anonymity allowed, thread lifetimes, etc)
+  g := &models.Group{
+    Created: bson.Now(),
+    Name: group,
+    Author: user,
+    Admins: make([]bson.ObjectId,0),
+    Private: private,
   }
 
-  //create content feed for given user
-  if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
-    return "", err
+  //insert group into DB
+  err := db.C("groups").Insert(g)
+
+  //err should only happen on name duplicates
+  if err != nil {
+    return err
   }
 
-  //insert user
-  if err := db.C("users").Insert(usr); err != nil {
-    return "", err
-  }
-
-  //all went well, so return nil err
-  return usr.Id.Hex(), nil
+  //nothing went wrong, so return nil
+  return nil
 }
+
+//[Misc] Checks if group exists
+func GroupExists(group string) bool {
+  //get DB
+  db := Connection.DB("dartboard")
+
+  //check DB
+  count, err := db.C("groups").Find(bson.M{"name": group}).Count()
+
+  //something went wrong, so play it safe and say group doesn't exist
+  if err != nil {
+    return true
+  }
+
+  //if there are any groups with that name, it should be 1
+  return count == 1
+}
+
+/**
+    THREADS -------------------------------------------------------------
+ */
 
 //[CREATE] creates a thread from a struct of a given JSON -- also creates an mthread for each location
 func CreateThread(group string, anonymous bool, post *models.Post) error {
@@ -146,6 +160,10 @@ func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *model
   return post
 }
 
+/**
+    POSTS -------------------------------------------------------------
+ */
+
 //[CREATE] creates a post for a given thread
 func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error) {
   //connect to DB
@@ -199,48 +217,46 @@ func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, auth
 
 }
 
-//[CREATE] creates a group, rather, reserves a namespace for a group
-func CreateGroup(group string, user bson.ObjectId, private bool) error {
-  //get proper db
+/**
+    User & User Ops -------------------------------------------------------------
+ */
+
+//[CREATE] creates user in the Database with given email, username, and hashed password
+func CreateUser(email, username, password string) (string, error) {
+  //connect to appropriate DB
   db := Connection.DB("dartboard")
 
-  //create group with index options (anonymity allowed, thread lifetimes, etc)
-  g := &models.Group{
-    Created: bson.Now(),
-    Name: group,
-    Author: user,
-    Admins: make([]bson.ObjectId,0),
-    Private: private,
+  //create user struct
+  usr := &models.User{
+    Id:            bson.NewObjectId(),
+    Created:       bson.Now(),
+    Username:      username,
+    Usernames:     []string{username},
+  	Email:         email,
+    Password:      password,
+    Friends:       make([]bson.ObjectId, 0),
+    Notifications: make([]bson.ObjectId, 0),
+    Unread:        0,
+    Requests:      make([]bson.ObjectId, 0),
+    Activated:     false,
+    Suspended:     false,
+    Saved:         make([]bson.ObjectId, 0),
   }
 
-  //insert group into DB
-  err := db.C("groups").Insert(g)
-
-  //err should only happen on name duplicates
-  if err != nil {
-    return err
+  //create content feed for given user
+  if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
+    return "", err
   }
 
-  //nothing went wrong, so return nil
-  return nil
+  //insert user
+  if err := db.C("users").Insert(usr); err != nil {
+    return "", err
+  }
+
+  //all went well, so return nil err
+  return usr.Id.Hex(), nil
 }
 
-//[Misc] Checks if group exists
-func GroupExists(group string) bool {
-  //get DB
-  db := Connection.DB("dartboard")
-
-  //check DB
-  count, err := db.C("groups").Find(bson.M{"name": group}).Count()
-
-  //something went wrong, so play it safe and say group doesn't exist
-  if err != nil {
-    return true
-  }
-
-  //if there are any groups with that name, it should be 1
-  return count == 1
-}
 //[CREATE] creates a notification for the Id
 func CreateNotification(id bson.ObjectId, link, text string) error {
   db := Connection.DB("dartboard")
