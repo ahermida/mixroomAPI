@@ -62,6 +62,10 @@ type GetUserFeed struct {
   Page int `json:"page"`
 }
 
+type GetFriends struct {
+  Friends []string `json:"friends"`
+}
+
 type Friend struct {
   Username string `json:"username"`
   Friend string `json:"friend"`

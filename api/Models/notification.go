@@ -14,3 +14,10 @@ type Notification struct {
   Link      string        `bson:"link" json:"link"`
   Text      string        `bson:"text" json:"text"`
 }
+
+/*
+  JSON Handling
+*/
+type GetNotifications struct {
+	Notifications []Notification `json:"notifications"`
+}

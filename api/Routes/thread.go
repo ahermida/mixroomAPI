@@ -98,8 +98,7 @@ func getThread(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(filledThread); err != nil {
-    http.Error(res, http.StatusText(500), 500)
-    return
+    panic(err)
   }
 }
 
@@ -149,7 +148,7 @@ func createThread(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if errSending := json.NewEncoder(res).Encode(send); errSending != nil {
-    http.Error(res, http.StatusText(500), 500)
+    panic(errSending)
   }
 }
 
@@ -235,7 +234,7 @@ func createPost(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if errSending := json.NewEncoder(res).Encode(send); errSending != nil {
-    http.Error(res, http.StatusText(500), 500)
+    panic(err)
   }
 }
 

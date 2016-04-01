@@ -206,6 +206,21 @@ func GetUser(user string) (*models.GetUser, error) {
   return &userData, nil
 }
 
+//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
+func GetIdFromUsername(username string) string {
+  db := Connection.DB("dartboard")
+
+  var userData struct {
+    Id bson.ObjectId
+  }
+  fields := bson.M{"_id": 1}
+  if err := db.C("users").Find(bson.M{"username": username}).Select(fields).One(&userData); err != nil {
+    return ""
+  }
+
+  return userData.Id.Hex()
+}
+
 //[READ] compares the user & hashed password given to the one in the DB
 func LoginCheck(email, hashword string) (string, bool) {
 
@@ -251,7 +266,41 @@ func GetFriends(author string) ([]bson.ObjectId, error) {
   return people.Friends, nil
 }
 
-//[READ] gets user's friends -- resolving "joins"
+//[READ] gets a user's friends -- in a string slice format
+func GetFriendsJoined(id bson.ObjectId) ([]string, error) {
+  //grab proper db
+  db := Connection.DB("dartboard").C("users")
+
+  //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
+  var people struct{
+    Friends []bson.ObjectId
+  }
+
+  //get friends
+  if err := db.Find(bson.M{"_id": id}).Select(bson.M{"friends" : 1}).One(&people); err != nil {
+    return nil, err
+  }
+
+  //create slice that we'll return
+  friends := make([]string,0)
+
+  //go through friends
+  for _, friend := range people.Friends {
+    var fr struct {
+      Username string
+    }
+    err := db.Find(bson.M{"_id": friend}).Select(bson.M{"username": 1}).One(&fr)
+    if err != nil {
+      return nil, err
+    }
+    friends = append(friends, fr.Username)
+  }
+
+  //if all goes well, send back nil error and friends list
+  return friends, nil
+}
+
+//[READ] gets user's username
 func GetUsername(id bson.ObjectId) string {
 
   //grab proper db

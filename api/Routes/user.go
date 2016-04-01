@@ -70,7 +70,7 @@ func getUser(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(user); err != nil {
-    http.Error(res, http.StatusText(500), 500)
+    panic(err)
   }
 }
 
@@ -127,7 +127,7 @@ func threads(res http.ResponseWriter, req *http.Request) {
 
   //send over data
   if err := json.NewEncoder(res).Encode(grp); err != nil {
-      http.Error(res, http.StatusText(500), 500)
+    panic(err)
   }
 }
 
@@ -180,14 +180,10 @@ func username(res http.ResponseWriter, req *http.Request) {
 // Handle /user/userID
 func friends(res http.ResponseWriter, req *http.Request) {
   switch req.Method {
-  case "POST":
-    addFriend(res, req)
-  case "PUT":
-    acceptFriend(res, req)
-  case "DELETE":
-    removeFriend(res, req)
+  case "GET":
+    getFriends(res, req)
   default:
-    http.Error(res, http.StatusText(405), 405)
+    friend(res, req)
   }
 }
 
@@ -250,17 +246,48 @@ func getSaved(res http.ResponseWriter, req *http.Request) {
   res.WriteHeader(http.StatusOK)
   //send over data
   if err := json.NewEncoder(res).Encode(response); err != nil {
-      http.Error(res, http.StatusText(500), 500)
+      panic(err)
+  }
+}
+
+//GET Handle -- getting friend's names
+func getFriends(res http.ResponseWriter, req *http.Request) {
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //GetFriendsJoined(id bson.ObjectId) ([]string, error)
+  friends, err := db.GetFriendsJoined(bson.ObjectIdHex(id))
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //send friends over
+  sendFriends := &models.GetFriends{
+    Friends: friends,
+  }
+
+  //send back json formatted threads
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(sendFriends); err != nil {
+      panic(err)
   }
 }
 
 // POST Handle -- notifications are going to be a link with text
-func addFriend(res http.ResponseWriter, req *http.Request) {
+func friend(res http.ResponseWriter, req *http.Request) {
 
   //handle post with friends name
-  var frd models.Friend
+  var request models.Friend
   decoder := json.NewDecoder(req.Body)
-  if err := decoder.Decode(&frd); err != nil {
+  if err := decoder.Decode(&request); err != nil {
     http.Error(res, http.StatusText(400), 400)
     return
   }
@@ -271,8 +298,30 @@ func addFriend(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(401), 401)
     return
   }
-  //RequestFriend(user bson.ObjectId, username, friend string)
-  err := db.RequestFriend(bson.ObjectIdHex(id), frd.Username, frd.Friend)
+  var err error
+  if req.Method == "POST" {
+    //RequestFriend(user bson.ObjectId, username, friend string)
+    err = db.RequestFriend(bson.ObjectIdHex(id), request.Username, request.Friend)
+  }
+  if req.Method == "PUT" {
+    //AddFriend(friend, user bson.ObjectId)
+    friendId := db.GetIdFromUsername(request.Friend)
+    if friendId == "" {
+      http.Error(res, http.StatusText(400), 400)
+      return
+    }
+    err = db.AddFriend(bson.ObjectIdHex(friendId), bson.ObjectIdHex(id))
+  }
+  if req.Method == "DELETE" {
+    //RemoveFriend(friend, user bson.ObjectId)
+    friendId := db.GetIdFromUsername(request.Friend)
+    if friendId == "" {
+      http.Error(res, http.StatusText(400), 400)
+      return
+    }
+    err = db.RemoveFriend(bson.ObjectIdHex(friendId), bson.ObjectIdHex(id))
+  }
+
   if err != nil {
     http.Error(res, http.StatusText(500), 500)
     return
@@ -282,12 +331,35 @@ func addFriend(res http.ResponseWriter, req *http.Request) {
   res.WriteHeader(http.StatusNoContent)
 }
 
-// PUT Handle
-func acceptFriend(res http.ResponseWriter, req *http.Request) {
-}
-// DELETE Handle
-func removeFriend(res http.ResponseWriter, req *http.Request) {
-}
-// Handle
+// Handle GET
 func notifications(res http.ResponseWriter, req *http.Request) {
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //get notifications
+  notes, err := db.GetNotifications(bson.ObjectIdHex(id))
+
+  //let ourselves know if something went wrong
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+  
+  sendNotes := &models.GetNotifications{
+    Notifications: notes,
+  }
+
+  //send back json formatted threads
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(sendNotes); err != nil {
+      panic(err)
+  }
 }

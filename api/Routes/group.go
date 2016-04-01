@@ -107,7 +107,7 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
   res.WriteHeader(http.StatusOK)
   //send over data
   if err := json.NewEncoder(res).Encode(grp); err != nil {
-      http.Error(res, http.StatusText(500), 500)
+    panic(err)
   }
 }
 

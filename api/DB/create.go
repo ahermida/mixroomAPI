@@ -241,7 +241,7 @@ func GroupExists(group string) bool {
   //if there are any groups with that name, it should be 1
   return count == 1
 }
-
+//[CREATE] creates a notification for the Id
 func CreateNotification(id bson.ObjectId, link, text string) error {
   db := Connection.DB("dartboard")
   note := &models.Notification{

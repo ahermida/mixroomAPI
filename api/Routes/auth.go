@@ -234,8 +234,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 
   //send back Token in JSON
   if err := json.NewEncoder(res).Encode(result); err != nil {
-     http.Error(res, http.StatusText(400), 400)
-     return
+    panic(err)
   }
 }
 
