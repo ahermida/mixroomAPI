@@ -1,6 +1,6 @@
 /*
   Test API -- Integration test
-*/
+
 package server
 
 import (
@@ -8,3 +8,4 @@ import (
   //  "net/http/httptest"
   //  "testing"
 )
+*/

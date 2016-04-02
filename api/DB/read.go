@@ -25,10 +25,18 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
   //get DB
   db := Connection.DB("dartboard")
 
-  //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items
+  //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items -- project all fields
   pipeline := []bson.M{bson.M{"$sort": bson.M{"created": -1 }},
-                        bson.M{"$limit": 30},
-                        bson.M{"$skip": page * 30}}
+                       bson.M{"$limit": 30},
+                       bson.M{"$skip": page * 30},
+                       bson.M{"$project": bson.M{
+                         "_id": 1,
+                         "id": 1,
+                         "Created": 1,
+                         "thread": 1,
+                         "threadId": 1,
+                         "head": 1,
+                         "group": 1}}}
 
   //set up Pipe to actually run query
   pipe := db.C(group).Pipe(pipeline)
@@ -37,7 +45,7 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
   var threads []models.Mthread
 
   //run it
-  if err:= pipe.All(&threads); err != nil {
+  if err := pipe.All(&threads); err != nil {
 
     //if something is wrong, return err
     return nil, err
@@ -116,6 +124,7 @@ func IsMember(group string, user string) bool {
      Posts: make([]models.Post,0),
      Alive: thread.Alive,
      Group: thread.Group,
+     Mthread: thread.Mthread.Hex(),
    }
 
    //add reply to each of the posts that it was to
@@ -142,7 +151,7 @@ func IsMember(group string, user string) bool {
 func GetThreadParent(thread string) string {
   db := Connection.DB("dartboard")
   var thrd struct {
-    Group string
+    Group string `bson:"group"`
   }
   err := db.C("threads").Find(bson.M{"_id": bson.ObjectIdHex(thread)}).Select(bson.M{"group": 1}).One(&thrd)
   if err != nil {
@@ -341,7 +350,7 @@ func GetIdFromUsername(username string) string {
   db := Connection.DB("dartboard")
 
   var userData struct {
-    Id bson.ObjectId
+    Id bson.ObjectId `bson:"_id"`
   }
   fields := bson.M{"_id": 1}
   if err := db.C("users").Find(bson.M{"username": username}).Select(fields).One(&userData); err != nil {

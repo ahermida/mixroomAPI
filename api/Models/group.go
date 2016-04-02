@@ -19,12 +19,13 @@ type Group struct {
 
 //For the Group View
 type Mthread struct {
-	Id      bson.ObjectId `bson:"_id,omitempty" json:"-"`
-  SId     string        `bson:"id" json:"id"`
-  Created time.Time     `bson:"created" json:"created"`
-  Thread  bson.ObjectId `bson:"thread" json:"thread"`
-  Head    *Post         `bson:"head" json:"head"`
-  Group   string        `bson:"group" json:"group"`
+	Id       bson.ObjectId `bson:"_id,omitempty" json:"-"`
+  SId      string        `bson:"id" json:"id"`
+  Created  time.Time     `bson:"created" json:"created"`
+  Thread   bson.ObjectId `bson:"thread" json:"-"`
+  ThreadId string        `bson:"threadId" json:"thread"`
+  Head     *Post         `bson:"head" json:"head"`
+  Group    string        `bson:"group" json:"group"`
 }
 
 

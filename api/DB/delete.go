@@ -4,6 +4,7 @@
 package db
 
 import (
+  "fmt"
   "errors"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
@@ -57,20 +58,25 @@ func DeleteThread(threadID, userID bson.ObjectId) error {
   db := Connection.DB("dartboard")
 
   //post that will be populated by thread head
-  var post models.Post
+  var author struct {
+    Id bson.ObjectId `bson:"author"`
+  }
 
   //verify author by head post for threads
-  if err := db.C("threads").Find(bson.M{"_id": threadID}).Select(bson.M{"posts.0" : 1}).One(&post); err != nil {
+  if err := db.C("threads").Find(bson.M{"_id": threadID}).Select(bson.M{"author" : 1}).One(&author); err != nil {
+    fmt.Println("Yoo")
     return err
   }
 
   //compare user ids
-  if post.AuthorId != userID {
+  if author.Id != userID {
+    fmt.Println("Doo")
     return errors.New("User can't delete the thread as he's not the author.")
   }
 
   //remove thread
   if err := db.C("threads").Remove(bson.M{"_id": threadID}); err != nil {
+    fmt.Println("Yoosz")
     return err
   }
 
@@ -127,6 +133,10 @@ func RemoveUser(user bson.ObjectId) error {
   //call DB
   err := Connection.DB("dartboard").C("users").Remove(bson.M{"_id": user})
   if err != nil {
+    return err
+  }
+  errDropping := Connection.DB("dartboard").C(user.Hex()).DropCollection()
+  if errDropping != nil {
     return err
   }
   return nil

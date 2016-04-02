@@ -20,9 +20,11 @@ import (
 type Thread struct {
 	Id      bson.ObjectId   `bson:"_id,omitempty"`
   Created time.Time       `bson:"created"`
+  Author  bson.ObjectId   `bson:"author"`
   Posts   []bson.ObjectId `bson:"posts"`
   Alive   bool            `bson:"alive"`
   Group   string          `bson:"group"`
+  Mthread bson.ObjectId   `bson:"mthread"`
 }
 
 type ResThread struct {
@@ -32,6 +34,7 @@ type ResThread struct {
   Posts   []Post          `json:"posts" bson:"posts"`
   Alive   bool            `json:"-" bson:"alive"`
   Group   string          `json:"group" bson:"group"`
+  Mthread string          `json:"mthread" bson:"-"`
 }
 
 /*

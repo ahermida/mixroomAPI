@@ -72,15 +72,22 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
     Posts: []bson.ObjectId{post.Id},
     Alive: true,
     Group: group,
+    Author: post.AuthorId,
   }
 
+  //id for mthread
   mId := bson.NewObjectId()
+
+  //set reference to mthread (for easy saves)
+  thread.Mthread = mId
+
   //create mthread -- for view
   mthread := &models.Mthread{
     Id: mId,
     SId: mId.Hex(),
     Created: thread.Created,
     Thread: thread.Id,
+    ThreadId: thread.Id.Hex(),
     Head: post,
     Group: group,
   }
@@ -243,13 +250,13 @@ func CreateUser(email, username, password string) (string, error) {
     Saved:         make([]bson.ObjectId, 0),
   }
 
-  //create content feed for given user
-  if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
+  //insert user -- before feed so we don't create collections needlessly
+  if err := db.C("users").Insert(usr); err != nil {
     return "", err
   }
 
-  //insert user
-  if err := db.C("users").Insert(usr); err != nil {
+  //create content feed for given user
+  if err := CreateGroup(usr.Id.Hex(), usr.Id, true); err != nil {
     return "", err
   }
 
@@ -286,7 +293,7 @@ func RequestFriend(user bson.ObjectId, username, friend string) error {
   db := Connection.DB("dartboard")
 
   var newFriend struct {
-    Id bson.ObjectId
+    Id bson.ObjectId `bson:"_id"`
   }
   q := db.C("users").Find(bson.M{"username": friend})
   if err := q.Select(bson.M{"_id": 1}).One(&newFriend); err != nil {

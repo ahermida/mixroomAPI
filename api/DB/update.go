@@ -51,10 +51,13 @@ func AddAdmin(oldAdmin, user bson.ObjectId, group string) error {
   change := bson.M{"$addToSet": bson.M{"admins" : user}}
 
   //run update to group
-  errFromUpdate := db.C("group").Update(bson.M{"name": group}, change)
+  errFromUpdate := db.C("groups").Update(bson.M{"name": group}, change)
+  if errFromUpdate != nil {
+    return errFromUpdate
+  }
 
   //should be nil if nothing went wrong updating
-  return errFromUpdate
+  return nil
 }
 
 //[UPDATE] Removes admins, only the author can do this
@@ -80,7 +83,7 @@ func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
   change := bson.M{"$pull": bson.M{"admins" : user}}
 
   //run update
-  err := db.C("group").Update(bson.M{"name": group}, change)
+  err := db.C("groups").Update(bson.M{"name": group}, change)
 
   //should be nil if nothing went wrong
   return err
@@ -100,9 +103,9 @@ func EditPost(text string, post, user bson.ObjectId) error {
   var getPost struct {
     AuthorId bson.ObjectId `bson:"authorId"`
   }
-
+  
   //we have to make sure that we're the author
-  if err := db.C("posts").Find(bson.M{"_id": post}).Select(bson.M{"author": 1}).One(&getPost); err != nil {
+  if err := db.C("posts").Find(bson.M{"_id": post}).Select(bson.M{"authorId": 1}).One(&getPost); err != nil {
 
    //if there's an error return it
    return err
@@ -118,9 +121,12 @@ func EditPost(text string, post, user bson.ObjectId) error {
 
   //run update to user (found by _id)
   err := db.C("posts").Update(bson.M{"_id": post}, change)
+  if err != nil {
+    return err
+  }
 
   //should be nil if nothing went wrong
-  return err
+  return nil
 }
 
 /**
@@ -145,12 +151,11 @@ func ActivateAccount(user bson.ObjectId) error {
 
 //[UPDATE] changes password for a given uid
 func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) error {
-
   //get proper DB
   db := Connection.DB("dartboard")
 
   var usr struct {
-    Password string
+    Password string `bson:"password"`
   }
 
   if err := db.C("users").Find(bson.M{"_id": user}).Select(bson.M{"password": 1}).One(&usr); err != nil {
@@ -180,7 +185,7 @@ func DeleteUser(user bson.ObjectId) error {
 
   //find user's name
   var usr struct {
-    Username string
+    Username string `bson:"username"`
   }
 
   //query username
@@ -240,7 +245,7 @@ func ChangeUsername(username string, user bson.ObjectId) error {
 
   //anonymous struct for simplicity in extracting user's usernames
   var person struct {
-    Usernames []string
+    Usernames []string `bson:"usernames"`
   }
 
   //check if we have username
@@ -299,7 +304,7 @@ func AddUsername(username string, user bson.ObjectId) error {
 
   //anonymous struct for simplicity in extracting user's usernames
   var person struct {
-    Usernames []string
+    Usernames []string `bson:"usernames"`
   }
 
   //check if we have username
@@ -337,7 +342,7 @@ func RemoveUsername(username string, user bson.ObjectId) error {
 
   //anonymous struct for simplicity in extracting user's usernames
   var person struct {
-    Usernames []string
+    Usernames []string `bson:"usernames"`
   }
 
   //check if we have username
@@ -379,13 +384,13 @@ func RemoveUsername(username string, user bson.ObjectId) error {
  */
 
 //[UPDATE] pushes a thread to a user's watchlist
-func SaveThread(thread, user bson.ObjectId) error {
+func SaveThread(mthread, user bson.ObjectId) error {
 
   //get proper DB
   db := Connection.DB("dartboard")
 
   //setup change -- push thread ID to saved
-  change := bson.M{"$addToSet": bson.M{"saved" : thread}}
+  change := bson.M{"$addToSet": bson.M{"saved" : mthread}}
 
   //run update to user (found by _id)
   err := db.C("users").Update(bson.M{"_id": user}, change)
