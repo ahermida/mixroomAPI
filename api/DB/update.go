@@ -7,6 +7,8 @@ import (
   "errors"
   "gopkg.in/mgo.v2/bson"
   "fmt"
+  "github.com/ahermida/dartboardAPI/api/Config"
+
 )
 
 /**
@@ -45,7 +47,7 @@ func AddAdmin(oldAdmin, user bson.ObjectId, group string) error {
   }
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change
   change := bson.M{"$addToSet": bson.M{"admins" : user}}
@@ -77,7 +79,7 @@ func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
   }
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change
   change := bson.M{"$pull": bson.M{"admins" : user}}
@@ -97,13 +99,13 @@ func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
 func EditPost(text string, post, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //check if user is author of post
   var getPost struct {
     AuthorId bson.ObjectId `bson:"authorId"`
   }
-  
+
   //we have to make sure that we're the author
   if err := db.C("posts").Find(bson.M{"_id": post}).Select(bson.M{"authorId": 1}).One(&getPost); err != nil {
 
@@ -137,7 +139,7 @@ func EditPost(text string, post, user bson.ObjectId) error {
 func ActivateAccount(user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change -- modifying activated value in user
   change := bson.M{"$set": bson.M{"activated" : true}}
@@ -152,7 +154,7 @@ func ActivateAccount(user bson.ObjectId) error {
 //[UPDATE] changes password for a given uid
 func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) error {
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   var usr struct {
     Password string `bson:"password"`
@@ -181,7 +183,7 @@ func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) 
 func DeleteUser(user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //find user's name
   var usr struct {
@@ -241,7 +243,7 @@ func DeleteUser(user bson.ObjectId) error {
 func ChangeUsername(username string, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //anonymous struct for simplicity in extracting user's usernames
   var person struct {
@@ -284,7 +286,7 @@ func ChangeUsername(username string, user bson.ObjectId) error {
 func AddUsername(username string, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //check if the username is already taken
   count, err := db.C("users").Find(bson.M{"usernames": username}).Count()
@@ -335,7 +337,7 @@ func AddUsername(username string, user bson.ObjectId) error {
 func RemoveUsername(username string, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //check if we have fewer than 3 usernames
   queryUser := db.C("users").Find(bson.M{"_id": user})
@@ -387,7 +389,7 @@ func RemoveUsername(username string, user bson.ObjectId) error {
 func SaveThread(mthread, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change -- push thread ID to saved
   change := bson.M{"$addToSet": bson.M{"saved" : mthread}}
@@ -403,7 +405,7 @@ func SaveThread(mthread, user bson.ObjectId) error {
 func UnsaveThread(thread, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change -- modifying activated value in user -- reactivate with email
   change := bson.M{"$pull": bson.M{"saved" : thread}}
@@ -423,7 +425,7 @@ func UnsaveThread(thread, user bson.ObjectId) error {
 func AddFriend(friend, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup changes -- add friend to list -- do same for friend
   change := bson.M{"$addToSet": bson.M{"friends" : friend}}
@@ -470,7 +472,7 @@ func AddFriend(friend, user bson.ObjectId) error {
 func RemoveFriend(friend, user bson.ObjectId) error {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //setup change -- remove friend from list -- do same for friend
   change := bson.M{"$pull": bson.M{"friends" : friend}}

@@ -7,6 +7,8 @@ import (
   "fmt"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
+  "github.com/ahermida/dartboardAPI/api/Config"
+
 )
 /**
     GROUPS -------------------------------------------------------------
@@ -15,7 +17,7 @@ import (
 //[CREATE] creates a group, rather, reserves a namespace for a group
 func CreateGroup(group string, user bson.ObjectId, private bool) error {
   //get proper db
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //create group with index options (anonymity allowed, thread lifetimes, etc)
   g := &models.Group{
@@ -41,7 +43,7 @@ func CreateGroup(group string, user bson.ObjectId, private bool) error {
 //[Misc] Checks if group exists
 func GroupExists(group string) bool {
   //get DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //check DB
   count, err := db.C("groups").Find(bson.M{"name": group}).Count()
@@ -63,7 +65,7 @@ func GroupExists(group string) bool {
 func CreateThread(group string, anonymous bool, post *models.Post) error {
 
   //connect to DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //create thread, then attach to mthread
   thread := &models.Thread{
@@ -122,7 +124,7 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
   //if anonymous poster, don't share apart from thread
   if !anonymous {
 
-    //get friends of author by mongo _id
+    //get friends of author
     friends, err := GetFriends(post.Author)
 
     //check if something went wrong getting friends
@@ -174,7 +176,7 @@ func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *model
 //[CREATE] creates a post for a given thread
 func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error) {
   //connect to DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //add post to DB, notify people that it exists, add replies to responses
   post := &models.Post{
@@ -231,7 +233,7 @@ func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, auth
 //[CREATE] creates user in the Database with given email, username, and hashed password
 func CreateUser(email, username, password string) (string, error) {
   //connect to appropriate DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //create user struct
   usr := &models.User{
@@ -266,7 +268,7 @@ func CreateUser(email, username, password string) (string, error) {
 
 //[CREATE] creates a notification for the Id
 func CreateNotification(id bson.ObjectId, link, text string) error {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   note := &models.Notification{
     Id: bson.NewObjectId(),
     Recipient: id,
@@ -290,7 +292,7 @@ func CreateNotification(id bson.ObjectId, link, text string) error {
 }
 
 func RequestFriend(user bson.ObjectId, username, friend string) error {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   var newFriend struct {
     Id bson.ObjectId `bson:"_id"`

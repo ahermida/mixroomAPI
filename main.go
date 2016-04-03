@@ -7,8 +7,6 @@ import (
   "fmt"
   "github.com/ahermida/dartboardAPI/api/Server"
   "github.com/ahermida/dartboardAPI/api/Config"
-  "github.com/ahermida/dartboardAPI/api/DB"
-  "os"
   "runtime"
   "syscall"
   "time"
@@ -52,7 +50,6 @@ func main() {
     }
   }
 
-  //Exit App -- but close connection to DB first
-  db.Connection.Close()
-  os.Exit(0)
+  //Shut Server Down
+  server.Close()
 }

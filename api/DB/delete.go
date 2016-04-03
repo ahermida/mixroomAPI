@@ -4,10 +4,11 @@
 package db
 
 import (
-  "fmt"
   "errors"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
+  "github.com/ahermida/dartboardAPI/api/Config"
+
 )
 
 /**
@@ -18,7 +19,7 @@ import (
 func DeleteGroup(group string, user bson.ObjectId) error {
 
   //call DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //make struct for group
   var grp models.Group
@@ -55,28 +56,52 @@ func DeleteGroup(group string, user bson.ObjectId) error {
 func DeleteThread(threadID, userID bson.ObjectId) error {
 
   //call DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //post that will be populated by thread head
   var author struct {
     Id bson.ObjectId `bson:"author"`
+    Mthread bson.ObjectId `bson:"mthread"`
+    Group string `bson:"group"`
   }
-
+  q := db.C("threads").Find(bson.M{"_id": threadID}).Select(bson.M{"author" : 1, "mthread": 1, "group": 1})
   //verify author by head post for threads
-  if err := db.C("threads").Find(bson.M{"_id": threadID}).Select(bson.M{"author" : 1}).One(&author); err != nil {
-    fmt.Println("Yoo")
+  if err := q.One(&author); err != nil {
     return err
   }
 
-  //compare user ids
+  //compare user ids -- if this passes, then go on to do great things
   if author.Id != userID {
-    fmt.Println("Doo")
     return errors.New("User can't delete the thread as he's not the author.")
+  }
+
+  //set mthread to its id
+  mthread := author.Mthread
+
+  //get friends of author by mongo _id
+  friends, _ := GetFriendsById(userID)
+
+  //check if we have friends -- not anonymous -- in this case, remove the mthreads from feeds
+  if friends != nil {
+    //get friends of author for post & deliver thread to their feeds
+    for _, friend := range friends {
+
+      //insert hex representation of MongoId
+      err :=  db.C(friend.Hex()).Remove(bson.M{"_id": mthread})
+      if err != nil {
+        //return err if anything fails -- no reason why it should though
+        return err
+      }
+    }
+  }
+
+  //remove thread from everything
+  if err := db.C(author.Group).Remove(bson.M{"_id": mthread}); err != nil {
+    return err
   }
 
   //remove thread
   if err := db.C("threads").Remove(bson.M{"_id": threadID}); err != nil {
-    fmt.Println("Yoosz")
     return err
   }
 
@@ -91,7 +116,7 @@ func DeleteThread(threadID, userID bson.ObjectId) error {
 //[DELETE] removes a post
 func DeletePost(postID, userID bson.ObjectId) error {
   //call DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //post that will be populated by thread head
   var post struct {
@@ -131,11 +156,11 @@ func DeletePost(postID, userID bson.ObjectId) error {
 //[DELETE] actually deletes a user (for dev use only!)
 func RemoveUser(user bson.ObjectId) error {
   //call DB
-  err := Connection.DB("dartboard").C("users").Remove(bson.M{"_id": user})
+  err := Connection.DB(config.DBName).C("users").Remove(bson.M{"_id": user})
   if err != nil {
     return err
   }
-  errDropping := Connection.DB("dartboard").C(user.Hex()).DropCollection()
+  errDropping := Connection.DB(config.DBName).C(user.Hex()).DropCollection()
   if errDropping != nil {
     return err
   }

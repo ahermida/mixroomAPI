@@ -38,7 +38,7 @@ func ensureUserIndex() {
   }
 
   //ensure indices are unique
-  err := Connection.DB("dartboard").C("users").EnsureIndex(index)
+  err := Connection.DB(config.DBName).C("users").EnsureIndex(index)
 
   //index needs to be unique
   if err != nil {
@@ -57,7 +57,7 @@ func ensureGroupIndex() {
   }
 
   //ensure indices are unique
-  err := Connection.DB("dartboard").C("groups").EnsureIndex(index)
+  err := Connection.DB(config.DBName).C("groups").EnsureIndex(index)
 
   //index needs to be unique
   if err != nil {

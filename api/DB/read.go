@@ -7,6 +7,8 @@ import (
   "errors"
   "gopkg.in/mgo.v2/bson"
   "github.com/ahermida/dartboardAPI/api/Models"
+  "github.com/ahermida/dartboardAPI/api/Config"
+
 )
 
 /**
@@ -23,7 +25,7 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
     return nil, errors.New("Can't get a group that doens't exist.")
   }
   //get DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items -- project all fields
   pipeline := []bson.M{bson.M{"$sort": bson.M{"created": -1 }},
@@ -57,7 +59,7 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
 
 //[READ] gets group info -- meta info about group from group collection
 func CheckGroup(group string) (*models.Group, error) {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   var g models.Group
   err := db.C("groups").Find(bson.M{"name": group}).One(&g)
   if err != nil {
@@ -69,7 +71,7 @@ func CheckGroup(group string) (*models.Group, error) {
 
 //[READ] checks if user is a member of a group
 func IsMember(group string, user string) bool {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   var g models.Group
   err := db.C("groups").Find(bson.M{"name": group}).One(&g)
 
@@ -102,7 +104,7 @@ func IsMember(group string, user string) bool {
  func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
 
    //call DB
-   db := Connection.DB("dartboard")
+   db := Connection.DB(config.DBName)
 
    //thread model
    var thread models.Thread
@@ -149,7 +151,7 @@ func IsMember(group string, user string) bool {
 
 //[READ] returns group that the given thead (hex string) belongs to
 func GetThreadParent(thread string) string {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   var thrd struct {
     Group string `bson:"group"`
   }
@@ -167,7 +169,7 @@ func GetThreadParent(thread string) string {
 
 //[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
 func GetUser(user string) (*models.GetUser, error) {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   usr := bson.ObjectIdHex(user)
   var userData models.GetUser
   fields := bson.M{"email": 1, "username": 1, "unread": 1}
@@ -184,7 +186,7 @@ func GetUser(user string) (*models.GetUser, error) {
 
 //[READ]
 func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   var user struct {
     Saved []bson.ObjectId `bson:"saved"`
   }
@@ -211,7 +213,7 @@ func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
 
 //[READ]
 func GetNotifications(userId bson.ObjectId) ([]models.Notification, error){
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
   var user struct {
     Notifications []bson.ObjectId `bson:"notifications"`
   }
@@ -241,7 +243,7 @@ func GetNotifications(userId bson.ObjectId) ([]models.Notification, error){
 func LoginCheck(email, hashword string) (string, bool) {
 
   //get proper DB
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   //make struct for query
   var usr struct {
@@ -269,7 +271,7 @@ func LoginCheck(email, hashword string) (string, bool) {
 func GetFriends(author string) ([]bson.ObjectId, error) {
 
   //grab proper db
-  db := Connection.DB("dartboard").C("users")
+  db := Connection.DB(config.DBName).C("users")
 
   //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
   var people struct{
@@ -286,10 +288,31 @@ func GetFriends(author string) ([]bson.ObjectId, error) {
   return people.Friends, nil
 }
 
+//[READ] gets user's friends -- resolving "joins"
+func GetFriendsById(author bson.ObjectId) ([]bson.ObjectId, error) {
+
+  //grab proper db
+  db := Connection.DB(config.DBName).C("users")
+
+  //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
+  var people struct{
+    Friends []bson.ObjectId `bson:"friends"`
+  }
+
+  //get friends
+  err := db.Find(bson.M{"_id": author}).Select(bson.M{"friends" : 1}).One(&people)
+  if err != nil {
+    return nil, err
+  }
+
+  //all is well, so return nil error and friends
+  return people.Friends, nil
+}
+
 //[READ] gets a user's friends -- in a string slice format
 func GetFriendsJoined(id bson.ObjectId) ([]string, error) {
   //grab proper db
-  db := Connection.DB("dartboard").C("users")
+  db := Connection.DB(config.DBName).C("users")
 
   //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
   var people struct{
@@ -328,7 +351,7 @@ func GetFriendsJoined(id bson.ObjectId) ([]string, error) {
 func GetUsername(id bson.ObjectId) string {
 
   //grab proper db
-  db := Connection.DB("dartboard").C("users")
+  db := Connection.DB(config.DBName).C("users")
 
   //anonymous struct just so type doesn't fail us on unmarshalling to []bson.ObjectId
   var person struct{
@@ -347,7 +370,7 @@ func GetUsername(id bson.ObjectId) string {
 
 //[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
 func GetIdFromUsername(username string) string {
-  db := Connection.DB("dartboard")
+  db := Connection.DB(config.DBName)
 
   var userData struct {
     Id bson.ObjectId `bson:"_id"`

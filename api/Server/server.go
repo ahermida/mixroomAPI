@@ -5,24 +5,37 @@ package server
 
 import (
   "net/http"
-  "github.com/ahermida/dartboardAPI/api/Routes" //package with route mux(s)
-  "github.com/ahermida/dartboardAPI/api/Util"   //package with utility funcs
+  "github.com/ahermida/dartboardAPI/api/Routes"
+  "github.com/ahermida/dartboardAPI/api/Util"
+  "os"
+  "github.com/ahermida/dartboardAPI/api/DB"
 )
 
-func Start(port string) {
+//Use this to handle routes
+var server = http.NewServeMux()
 
+func init() {
   //handle group manipulation routes
-  http.Handle("/group/", util.Log(routes.GroupMux))
+  server.Handle("/group/", util.Log(routes.GroupMux))
 
   //handle auth routes
-  http.Handle("/auth/", util.Log(routes.AuthMux))
+  server.Handle("/auth/", util.Log(routes.AuthMux))
 
   //handle thread manipulation routes
-  http.Handle("/thread/", util.Log(routes.ThreadMux))
+  server.Handle("/thread/", util.Log(routes.ThreadMux))
 
   //handle user routes
-  http.Handle("/user/", util.Log(routes.UserMux))
+  server.Handle("/user/", util.Log(routes.UserMux))
 
+}
+
+func Start(port string) {
   //Start Server
-  go http.ListenAndServe(port, nil) // set listen port
+  go http.ListenAndServe(port, server) // set listen port
+}
+
+func Close() {
+  //Exit App -- but close connection to DB first
+  db.Connection.Close()
+  os.Exit(0)
 }

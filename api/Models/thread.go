@@ -1,14 +1,6 @@
 /*
   thread.go -- models for thread operations
-  thread model:
-    {
-      "_id" : "12312313",
-      "created" : timestamp,
-      "head" : 123131321, //post by mongo _id
-      "posts": [123121312, 12312131, 12313213] //mongo id's (resolved aferwards)
-      "group" : 123132131, //group id (group that it originally belongs to)
-      "alive" : true
-    }
+  thread model
 */
 package models
 
