@@ -57,6 +57,7 @@ import (
   "github.com/ahermida/dartboardAPI/api/DB"
   "net/http/httptest"
   "testing"
+  "gopkg.in/mgo.v2/bson"
   "strings"
   "fmt"
 )
@@ -616,5 +617,9 @@ func TestDectivateUser2(t *testing.T) {
 }
 
 func TestDeleteUsers(t *testing.T){
-
+  //cleanup groups
+  id := db.GetIdFromUsername("test")
+  id1 := db.GetIdFromUsername("test1")
+  db.RemoveUser(bson.ObjectIdHex(id))
+  db.RemoveUser(bson.ObjectIdHex(id1))
 }

@@ -160,6 +160,10 @@ func RemoveUser(user bson.ObjectId) error {
   if err != nil {
     return err
   }
+  errDropGrp := Connection.DB(config.DBName).C("groups").Remove(bson.M{"name": user.Hex()})
+  if errDropGrp != nil {
+    return err
+  }
   errDropping := Connection.DB(config.DBName).C(user.Hex()).DropCollection()
   if errDropping != nil {
     return err
