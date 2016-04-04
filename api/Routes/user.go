@@ -156,6 +156,7 @@ func username(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(400), 400)
     return
   }
+  
   var err error
   if req.Method == "POST" {
     err = db.AddUsername(user.Username, bson.ObjectIdHex(id))
@@ -207,9 +208,10 @@ func savedToggle(res http.ResponseWriter, req *http.Request) {
   if req.Method == "POST" {
     err = db.SaveThread(bson.ObjectIdHex(save.Thread), bson.ObjectIdHex(id));
   }
-  if req.Method == "DELETE" {
+  if req.Method == "PUT" {
     err = db.UnsaveThread(bson.ObjectIdHex(save.Thread), bson.ObjectIdHex(id));
   }
+
   if err != nil {
     http.Error(res, http.StatusText(500), 500)
     return
@@ -309,7 +311,7 @@ func friend(res http.ResponseWriter, req *http.Request) {
       http.Error(res, http.StatusText(400), 400)
       return
     }
-    err = db.AddFriend(bson.ObjectIdHex(friendId), bson.ObjectIdHex(id))
+    err = db.AddFriend(bson.ObjectIdHex(id), bson.ObjectIdHex(friendId))
   }
   if req.Method == "DELETE" {
     //RemoveFriend(friend, user bson.ObjectId)

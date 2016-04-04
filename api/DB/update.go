@@ -86,9 +86,12 @@ func RemoveAdmin(oldAdmin, user bson.ObjectId, group string) error {
 
   //run update
   err := db.C("groups").Update(bson.M{"name": group}, change)
+  if err != nil {
+    return err
+  }
 
   //should be nil if nothing went wrong
-  return err
+  return nil
 }
 
 /**

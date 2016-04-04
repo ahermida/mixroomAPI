@@ -89,10 +89,14 @@ func register(res http.ResponseWriter, req *http.Request) {
   }
 
   //makes token with id hex baked in
-  token, err := util.MakeToken(id)
+  token, errToken := util.MakeToken(id)
+  if errToken != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
 
-  //send user validation email
-  setupEmail(usr.Email, token)
+  //send user validation email -- this should be done in a goroutine
+  go setupEmail(usr.Email, token)
 
   //statuscode 204
   res.WriteHeader(http.StatusNoContent)
@@ -131,7 +135,7 @@ func recovery(res http.ResponseWriter, req *http.Request) {
   }
 
   //send user validation email
-  recoverEmail(rec.Email, token)
+  go recoverEmail(rec.Email, token)
 
   //statuscode 204
   res.WriteHeader(http.StatusCreated)
@@ -184,7 +188,7 @@ func activate(res http.ResponseWriter, req *http.Request) {
 
 // Handle /user/deactivate
 func deactivate(res http.ResponseWriter, req *http.Request) {
-  if req.Method != "POST" {
+  if req.Method != "DELETE" {
     http.Error(res, http.StatusText(405), 405)
     return
   }

@@ -36,9 +36,10 @@ type CreateUser struct {
 }
 
 type GetUser struct {
-  Username      string `bson:"username" json:"username"`
-  Email         string `bson:"email" json:"email"`
-  Unread        int    `bson:"unread" json:"unread"`
+  Username      string   `bson:"username" json:"username"`
+  Email         string   `bson:"email" json:"email"`
+  Unread        int      `bson:"unread" json:"unread"`
+  Usernames     []string `bson:"usernames" json:"usernames"`
 }
 
 type GetUserFeed struct {

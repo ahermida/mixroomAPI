@@ -207,7 +207,7 @@ func GetUser(user string) (*models.GetUser, error) {
   db := Connection.DB(config.DBName)
   usr := bson.ObjectIdHex(user)
   var userData models.GetUser
-  fields := bson.M{"email": 1, "username": 1, "unread": 1}
+  fields := bson.M{"email": 1, "username": 1, "unread": 1, "usernames": 1}
   if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
     return nil, err
   }

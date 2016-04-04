@@ -19,24 +19,24 @@ package server
   <User> ------------------------------------------------------
   xGET get user info ("/user/", getUser)                           - [id required]
   xGET get saved ("/user/saved", saved)                            - [id required]
-  POST add saved ("/user/saved", saved)                           - models.Saved
-  PUT removed saved ("/user/saved", saved)                        - models.Saved
-  POST get user's threads ("/user/threads", threads)              - models.GetUserFeed
-  POST add a username ("/user/username", username)                - models.Username
-  PUT to change it ("/user/username", username)                   - models.Username
-  DELETE to remove it ("/user/username", username)                - models.Username
-  GET get all notifications ("/user/notifications", notifications)- [id required]
-  GET -- gets friends list ("/user/friends", friends)             - [id required]
-  POST add a friend -- creates request ("/user/friends", friends) - models.Friend
-  PUT accept it ("/user/friends", friends)                        - models.Friend
-  DELETE to remove it ("/user/friends", friends)                  - models.Friend
+  xPOST add saved ("/user/saved", saved)                           - models.Saved
+  xPUT removed saved ("/user/saved", saved)                        - models.Saved
+  xPOST get user's threads ("/user/threads", threads)              - models.GetUserFeed
+  xPOST add a username ("/user/username", username)                - models.Username
+  xPUT to change it ("/user/username", username)                   - models.Username
+  xDELETE to remove it ("/user/username", username)                - models.Username
+  xGET get all notifications ("/user/notifications", notifications)- [id required]
+  xGET -- gets friends list ("/user/friends", friends)             - [id required]
+  xPOST add a friend -- creates request ("/user/friends", friends) - models.Friend
+  xPUT accept it ("/user/friends", friends)                        - models.Friend
+  xDELETE to remove it ("/user/friends", friends)                  - models.Friend
   </User>
 
   <Groups> ----------------------------------------------------
   xPOST -- to get group -- paginated ("/group/", getGroup)         - models.GetGroup
   xPOST -- check if admin or author ("/group/auth", getPermission) - models.Grp
   xPOST -- for groups -- creating them ("/group/modify", grp)      - models.CreateGroup
-  DELETE -- for groups -- deleting ("/group/modify", grp)         - models.Grp
+  xDELETE -- for groups -- deleting ("/group/modify", grp)         - models.Grp
   xPOST -- set admins for group ("/group/admin", admn)             - models.GroupAdmin
   xPUT -- delete Admins in groups ("/group/admin", admn)           - models.GroupAdmin
   </Groups>
@@ -44,10 +44,10 @@ package server
   <Threads> ---------------------------------------------------
   xPOST -- Get Thread ("/thread/", getThread)                      - models.GetThread
   xPOST -- Create Thread ("/thread/modify", thrd)                  - models.NewThread
-  DELETE -- Delete thread ("/thread/modify", thrd)                - models.RemoveThread
-  POST -- Create Post ("/thread/post", pst)                       - models.NewPost
-  DELETE -- Delete Post ("/thread/post", pst)                     - models.DeletePost
-  PUT -- Edit Post ("/thread/post", pst)                          - models.EditPost
+  xDELETE -- Delete thread ("/thread/modify", thrd)                - models.RemoveThread
+  xPOST -- Create Post ("/thread/post", pst)                       - models.NewPost
+  xDELETE -- Delete Post ("/thread/post", pst)                     - models.DeletePost
+  xPUT -- Edit Post ("/thread/post", pst)                          - models.EditPost
   </Threads>
 
 */
@@ -55,19 +55,129 @@ import (
   "net/http"
   "github.com/ahermida/dartboardAPI/api/Util"
   "github.com/ahermida/dartboardAPI/api/DB"
-  "net/http/httptest"
+  //"net/http/httptest"
   "testing"
   "strings"
   "fmt"
 )
 
 //setup server so we can test endpoints
-var server *httptest.Server
+//var server *httptest.Server
 
 func init() {
 
   //grab mux from server.go and run it
-  server = httptest.NewServer(Server)
+  //server = httptest.NewServer(Server)
+  //Start(":8080")
+}
+
+/*
+  Let it be known that at this point I gave and decided to write a function
+  to do this json thing automatically -- feeling stupid for not doing this
+  earlier...
+*/
+func DoTest(method, url, json string, expected int) bool {
+  id := db.GetIdFromUsername("test")
+  if id == "" {
+    fmt.Printf("Couldn't find username for Group Creation")
+  }
+  token, err := util.MakeToken(id)
+  if err != nil {
+    fmt.Printf("Couldn't make token for group.")
+    return false
+  }
+  reader := strings.NewReader(json)
+  request, err := http.NewRequest(method, url, reader)
+  request.Header.Set("access_token", token)
+
+  res, errSending := http.DefaultClient.Do(request)
+  if errSending != nil {
+    fmt.Printf("Couldn't send request.")
+    return false
+  }
+  if res.StatusCode != expected {
+    fmt.Printf("StatusCode wasn't correct.")
+    return false
+  }
+  return true
+}
+
+func DoTest1(method, url, json string, expected int) bool {
+  id := db.GetIdFromUsername("test1")
+  if id == "" {
+    fmt.Printf("Couldn't find username for Group Creation")
+  }
+  token, err := util.MakeToken(id)
+  if err != nil {
+    fmt.Printf("Couldn't make token for group.")
+    return false
+  }
+  reader := strings.NewReader(json)
+  request, err := http.NewRequest(method, url, reader)
+  request.Header.Set("access_token", token)
+
+  res, errSending := http.DefaultClient.Do(request)
+  if errSending != nil {
+    fmt.Printf("Couldn't send request.")
+    return false
+  }
+  if res.StatusCode != expected {
+    fmt.Printf("StatusCode wasn't correct.")
+    return false
+  }
+  return true
+}
+
+func DoTest2(method, url, json, username string, expected int) bool {
+  id := db.GetIdFromUsername(username)
+  if id == "" {
+    fmt.Printf("Couldn't find username for Group Creation")
+  }
+  token, err := util.MakeToken(id)
+  if err != nil {
+    fmt.Printf("Couldn't make token for group.")
+    return false
+  }
+  reader := strings.NewReader(json)
+  request, err := http.NewRequest(method, url, reader)
+  request.Header.Set("access_token", token)
+
+  res, errSending := http.DefaultClient.Do(request)
+  if errSending != nil {
+    fmt.Printf("Couldn't send request.")
+    return false
+  }
+  if res.StatusCode != expected {
+    fmt.Printf("StatusCode wasn't correct.")
+    return false
+  }
+  return true
+}
+
+func DoSimpleTest(method, url string, expected int) bool {
+  id := db.GetIdFromUsername("test1")
+  if id == "" {
+    fmt.Printf("Couldn't find username for Group Creation")
+  }
+  token, err := util.MakeToken(id)
+  if err != nil {
+    fmt.Printf("Couldn't make token for group.")
+    return false
+  }
+  request, err := http.NewRequest(method, url, nil)
+  request.Header.Set("access_token", token)
+
+  res, errSending := http.DefaultClient.Do(request)
+  if errSending != nil {
+    fmt.Printf("Couldn't send request.")
+    return false
+  }
+
+  if res.StatusCode != expected {
+    fmt.Printf("StatusCode wasn't correct.")
+    return false
+  }
+  return true
 }
 
 func TestCreateUser(t *testing.T) {
@@ -79,9 +189,9 @@ func TestCreateUser(t *testing.T) {
   }
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
-      t.Errorf("Couldn't send request")
+      t.Error(err1)
   }
-  if res.StatusCode != 201 {
+  if res.StatusCode != 204 {
        t.Errorf("Success expected: %d", res.StatusCode)
   }
 }
@@ -97,7 +207,7 @@ func TestActivateUser(t *testing.T) {
   }
   url := "http://localhost:8000/auth/activate"
   request, _ := http.NewRequest("GET", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
@@ -119,7 +229,7 @@ func TestCreateUser2(t *testing.T) {
   if err1 != nil {
       t.Errorf("Couldn't send request")
   }
-  if res.StatusCode != 201 {
+  if res.StatusCode != 204 {
        t.Errorf("Success expected: %d", res.StatusCode)
   }
 }
@@ -136,7 +246,7 @@ func TestActivateUser2(t *testing.T) {
   }
   url := "http://localhost:8000/auth/activate"
   request, _ := http.NewRequest("GET", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
@@ -174,7 +284,7 @@ func TestGetUser(t *testing.T) {
   }
   url := "http://localhost:8000/user/"
   request, _ := http.NewRequest("GET", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
@@ -196,7 +306,7 @@ func TestGetUserSaved(t *testing.T) {
   }
   url := "http://localhost:8000/user/saved"
   request, _ := http.NewRequest("GET", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
@@ -208,7 +318,7 @@ func TestGetUserSaved(t *testing.T) {
 }
 
 func TestMakeGroup(t *testing.T) {
-  id := db.GetIdFromUsername("test1")
+  id := db.GetIdFromUsername("test")
   if id == "" {
     t.Errorf("Couldn't find username for Group Creation")
   }
@@ -222,7 +332,7 @@ func TestMakeGroup(t *testing.T) {
   if err2 != nil {
     t.Errorf("Problem setting up request for login.")
   }
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
       t.Errorf("Couldn't send request")
@@ -233,7 +343,7 @@ func TestMakeGroup(t *testing.T) {
 }
 
 func TestAdmin(t *testing.T) {
-  id := db.GetIdFromUsername("test1")
+  id := db.GetIdFromUsername("test")
   if id == "" {
     t.Errorf("Couldn't find username for Group Creation")
   }
@@ -248,7 +358,7 @@ func TestAdmin(t *testing.T) {
   if err2 != nil {
     t.Errorf("Problem setting up permissions request.")
   }
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
   res, err1 := http.DefaultClient.Do(request)
   if err1 != nil {
       t.Errorf("Couldn't send request")
@@ -262,11 +372,11 @@ func TestAdmin(t *testing.T) {
   //add member to group
   json2 := fmt.Sprintf(`{"group":"test", "user":"%s"}`, otherId)
   reader2 := strings.NewReader(json2)
-  request1, err3 := http.NewRequest("POST", "http://localhost:8000/group/modify", reader2)
+  request1, err3 := http.NewRequest("POST", "http://localhost:8000/group/admin", reader2)
   if err3 != nil {
     t.Errorf("Problem setting up request for add member")
   }
-  request1.Header.Set("access_token": token)
+  request1.Header.Set("access_token", token)
   res2, err4 := http.DefaultClient.Do(request1)
   if err4 != nil {
       t.Errorf("Couldn't add member -- send request I mean.")
@@ -274,13 +384,13 @@ func TestAdmin(t *testing.T) {
   if res2.StatusCode != 204 {
        t.Errorf("Couldn't add member to group")
   }
-
+  reader3 := strings.NewReader(json2)
   //remove member from group
-  requestAgain, errAgain := http.NewRequest("PUT", "http://localhost:8000/group/modify", reader2)
+  requestAgain, errAgain := http.NewRequest("PUT", "http://localhost:8000/group/admin", reader3)
   if errAgain != nil {
     t.Errorf("Problem setting up request for add member")
   }
-  requestAgain.Header.Set("access_token": token)
+  requestAgain.Header.Set("access_token", token)
 
   resAgain, errAgain := http.DefaultClient.Do(requestAgain)
   if errAgain != nil {
@@ -297,7 +407,7 @@ func TestAdmin(t *testing.T) {
   if erere != nil {
     t.Errorf("Problem getting group.")
   }
-  rerere.Header.Set("access_token": token)
+  rerere.Header.Set("access_token", token)
 
   newRes, newErr := http.DefaultClient.Do(rerere)
   if newErr != nil {
@@ -307,49 +417,44 @@ func TestAdmin(t *testing.T) {
     t.Errorf("Problem getting group -- statuscode not 200")
   }
 }
-/*
-  Let it be known that at this point I gave and decided to write a function
-  to do this json thing automatically -- feeling stupid af for not doing this
-  earlier...
-*/
-func DoTest(method, url, json string, expected int) bool {
-  id := db.GetIdFromUsername("test1")
-  if id == "" {
-    t.Errorf("Couldn't find username for Group Creation")
-  }
-  token, err := util.MakeToken(id)
-  if err != nil {
-    t.Errorf("Couldn't make token for group.")
-    return false
-  }
-  reader := strings.NewReader(json)
-  request, err := http.NewRequest(method, url, reader)
-  request.Header.Set("access_token", token)
 
-  res, errSending := http.DefaultClient.Do(request)
-  if errSending != nil {
-    t.Error("Couldn't send request.")
-    return false
+func TestGetUserThreads(t *testing.T) {
+  json := `{"page": 0}`
+  if !DoTest("POST", "http://localhost:8000/user/threads", json, 200) {
+    t.Errorf("Couldn't get user threads")
   }
-  if res.StatusCode != expected {
-    t.Errorf("StatusCode wasn't correct.")
-    return false
-  }
-  return true
 }
+
+func TestFriends(t *testing.T) {
+  id := db.GetIdFromUsername("test")
+  id1 := db.GetIdFromUsername("test1")
+  if id == "" {
+    t.Errorf("Couldn't find username")
+  }
+  if id1 == "" {
+    t.Errorf("Couldn't find username")
+  }
+  json := `{"username":"test", "friend":"test1"}`
+  if !DoTest("POST", "http://localhost:8000/user/friends", json, 204) {
+    t.Errorf("Couldn't add user friend")
+  }
+  json1 := `{"username":"test1", "friend":"test"}`
+  if !DoTest1("PUT", "http://localhost:8000/user/friends", json1, 204) {
+    t.Errorf("Couldn't accept friends")
+  }
+  json2 := `{"username":"test", "friend":"test1"}`
+  if !DoTest("DELETE", "http://localhost:8000/user/friends", json2, 204) {
+    t.Errorf("Couldn't delete friend")
+  }
+}
+
 func TestMakeThread(t *testing.T) {
-  // type NewThread struct {
-  //   Group     string `json:"group"`
-  //   Body      string `json:"body"`
-  //   Author    string `json:"author"`
-  //   Content   string `json:"content"`
-  //   Anonymous bool   `json:"anonymous"`
-  // }
-  json := `{"group":"test","body":"hello","author":"test","content":"linkhere",anonymous:false}`
+  json := `{"group":"test","body":"hello","author":"test","content":"linkhere","anonymous":false}`
   if !DoTest("POST", "http://localhost:8000/thread/modify", json, 200) {
     t.Errorf("Make thread is messed up.")
   }
 }
+
 //can't actually get thread because we don't have ID of thread -- so let's get it
 func TestGetThread(t *testing.T) {
 
@@ -367,27 +472,37 @@ func TestGetThread(t *testing.T) {
   if !DoTest("POST", "http://localhost:8000/thread/", json, 200) {
     t.Error("Get thread is messed up")
   }
+
+  if !DoTest("POST", "http://localhost:8000/user/saved", json, 204) {
+    t.Error("Couldn't save thread")
+  }
+
+  if !DoTest("PUT", "http://localhost:8000/user/saved", json, 204) {
+    t.Error("Couldn't unsave thread")
+  }
 }
 
-// type NewPost struct {
-//   Body       string   `json:"body"`
-//   Content    string   `json:"content"`
-//   Author     string   `json:"author"`
-//   ResponseTo []string `json:"responseTo"`
-//   Anonymous  bool     `json:"anonymous"`
-//   Thread     string   `json:"thread"`
-// }
-//
-// type EditPost struct {
-//   Body string `json:"body"`
-//   Post string `json:"post"`
-//   Id   string `json:"id,omitempty"`
-// }
-//
-// type DeletePost struct {
-//   Post string `json:"post"`
-//   Id   string `json:"id,omitempty"`
-// }
+//test usernames
+func TestUsername(t *testing.T) {
+  json := `{"username": "dingo"}`
+
+  if !DoTest1("POST", "http://localhost:8000/user/username", json, 204) {
+    t.Errorf("Couldn't add username")
+  }
+
+  if !DoTest1("PUT", "http://localhost:8000/user/username", json, 204) {
+    t.Errorf("Couldn't change username")
+  }
+
+  json1 := `{"username": "test1"}`
+  if !DoTest2("PUT", "http://localhost:8000/user/username", json1, "dingo", 204) {
+    t.Errorf("Couldn't change username")
+  }
+
+  if !DoTest1("DELETE", "http://localhost:8000/user/username", json, 204) {
+    t.Errorf("Couldn't rm username")
+  }
+}
 
 //can't actually get thread because we don't have ID of thread -- so let's get it
 func TestPost(t *testing.T) {
@@ -410,12 +525,50 @@ func TestPost(t *testing.T) {
 
   postId := threads[0].Head.Id
   //another one -- edits posts
-  morejson := fmt.Sprintf(`{"post":"%s", "body":"This is just a test", }`, threadId.Hex())
-  if !DoTest("PUT", "http://localhost:8000/thread/post", morejson, 200) {
-    t.Error("Get thread is messed up")
+  morejson := fmt.Sprintf(`{"post":"%s", "body":"This is just a test"}`, postId.Hex())
+  if !DoTest("PUT", "http://localhost:8000/thread/post", morejson, 204) {
+    t.Error("Edit thread is messed up")
   }
 
+  //delete that very post
+  somejson := fmt.Sprintf(`{"post":"%s"}`, postId.Hex())
+  if !DoTest("DELETE", "http://localhost:8000/thread/post", somejson, 204) {
+    t.Error("Delete thread is messed up")
+  }
 }
+
+//simple gets
+func TestGets(t *testing.T) {
+  if !DoSimpleTest("GET", "http://localhost:8000/user/notifications", 200) {
+    t.Error("broken notifictions!")
+  }
+  if !DoSimpleTest("GET", "http://localhost:8000/user/friends", 200) {
+    t.Error("We couldn't even get friends")
+  }
+}
+
+func TestRemoveThread(t *testing.T) {
+  //get thread ID because we need it to move on
+  threads, err := db.GetGroup("test", 0)
+  if err != nil {
+    t.Errorf("couldn't actually get the group")
+  }
+
+  //shouldn't throw an error but it might if something went wrong beforehand
+  threadId := threads[0].Thread
+  json := fmt.Sprintf(`{"thread":"%s"}`, threadId.Hex())
+  if !DoTest("DELETE", "http://localhost:8000/thread/modify", json, 204) {
+    t.Error("Delete thread is messed up")
+  }
+}
+
+func TestRemoveGroup(t *testing.T) {
+  json := `{"group":"test"}`
+  if !DoTest("DELETE", "http://localhost:8000/group/modify", json, 204) {
+    t.Error("Delete thread is messed up")
+  }
+}
+
 
 func TestDectivateUser(t *testing.T) {
   id := db.GetIdFromUsername("test")
@@ -428,14 +581,14 @@ func TestDectivateUser(t *testing.T) {
   }
   url := "http://localhost:8000/auth/remove"
   request, err := http.NewRequest("DELETE", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err := http.DefaultClient.Do(request)
   if err != nil {
     t.Error("Couldn't send request") //Something is wrong while sending request
   }
   if res.StatusCode != 202 {
-    t.Errorf("Unfortunate Statuscode for Activating Users")
+    t.Errorf("Unfortunate Statuscode for Deactivating Users")
   }
 }
 
@@ -450,13 +603,13 @@ func TestDectivateUser2(t *testing.T) {
   }
   url := "http://localhost:8000/auth/remove"
   request, err := http.NewRequest("DELETE", url, nil)
-  request.Header.Set("access_token": token)
+  request.Header.Set("access_token", token)
 
   res, err := http.DefaultClient.Do(request)
   if err != nil {
     t.Error("Couldn't send request") //Something is wrong while sending request
   }
   if res.StatusCode != 202 {
-    t.Errorf("Unfortunate Statuscode for Activating Users")
+    t.Errorf("Unfortunate Statuscode for Decativating Users")
   }
 }
