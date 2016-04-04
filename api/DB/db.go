@@ -27,6 +27,12 @@ func init() {
   reserveNamespaces()
 }
 
+func SetupDB() {
+  ensureUserIndex()
+  ensureGroupIndex()
+  reserveNamespaces()
+}
+
 //Makes Sure that Users cannot be duplicates
 func ensureUserIndex() {
   index := mgo.Index{

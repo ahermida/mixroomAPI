@@ -55,20 +55,20 @@ import (
   "net/http"
   "github.com/ahermida/dartboardAPI/api/Util"
   "github.com/ahermida/dartboardAPI/api/DB"
-  //"net/http/httptest"
+  "net/http/httptest"
   "testing"
   "strings"
   "fmt"
 )
 
 //setup server so we can test endpoints
-//var server *httptest.Server
+var server *httptest.Server
 
 func init() {
 
   //grab mux from server.go and run it
-  //server = httptest.NewServer(Server)
-  //Start(":8080")
+  server = httptest.NewServer(Server)
+  fmt.Printf(server.URL)
 }
 
 /*
@@ -183,7 +183,7 @@ func DoSimpleTest(method, url string, expected int) bool {
 func TestCreateUser(t *testing.T) {
   json := `{"username":"test","email":"dkraken@thekrakenisgongetu.com","password":"testtest1"}`
   reader := strings.NewReader(json)
-  request, err := http.NewRequest("POST", "http://localhost:8000/auth/register", reader)
+  request, err := http.NewRequest("POST", fmt.Sprintf("%s/auth/register", server.URL), reader)
   if err != nil {
     t.Errorf("Problem setting up request.")
   }
@@ -191,8 +191,9 @@ func TestCreateUser(t *testing.T) {
   if err1 != nil {
       t.Error(err1)
   }
-  if res.StatusCode != 204 {
-       t.Errorf("Success expected: %d", res.StatusCode)
+  //if user was already made, don't worry about it.
+  if res.StatusCode != 204 && res.StatusCode != 500 {
+      t.Errorf("Success expected: %d", res.StatusCode)
   }
 }
 
@@ -205,7 +206,7 @@ func TestActivateUser(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/auth/activate"
+  url := fmt.Sprintf("%s/auth/activate", server.URL)
   request, _ := http.NewRequest("GET", url, nil)
   request.Header.Set("access_token", token)
 
@@ -221,7 +222,7 @@ func TestActivateUser(t *testing.T) {
 func TestCreateUser2(t *testing.T) {
   json := `{"username":"test1","email":"dkraken@thekrakenisgongetu1.com","password":"testtest2"}`
   reader := strings.NewReader(json)
-  request, err := http.NewRequest("POST", "http://localhost:8000/auth/register", reader)
+  request, err := http.NewRequest("POST", fmt.Sprintf("%s/auth/register", server.URL), reader)
   if err != nil {
     t.Errorf("Problem setting up request.")
   }
@@ -229,7 +230,7 @@ func TestCreateUser2(t *testing.T) {
   if err1 != nil {
       t.Errorf("Couldn't send request")
   }
-  if res.StatusCode != 204 {
+  if res.StatusCode != 204 && res.StatusCode != 500 {
        t.Errorf("Success expected: %d", res.StatusCode)
   }
 }
@@ -244,7 +245,7 @@ func TestActivateUser2(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/auth/activate"
+  url := fmt.Sprintf("%s/auth/activate", server.URL)
   request, _ := http.NewRequest("GET", url, nil)
   request.Header.Set("access_token", token)
 
@@ -260,7 +261,7 @@ func TestActivateUser2(t *testing.T) {
 func TestLogin(t *testing.T) {
   json := `{"email":"dkraken@thekrakenisgongetu.com","password":"testtest1"}`
   reader := strings.NewReader(json)
-  request, err := http.NewRequest("POST", "http://localhost:8000/auth/login", reader)
+  request, err := http.NewRequest("POST", fmt.Sprintf("%s/auth/login", server.URL), reader)
   if err != nil {
     t.Errorf("Problem setting up request for login.")
   }
@@ -282,7 +283,7 @@ func TestGetUser(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/user/"
+  url := fmt.Sprintf("%s/user/", server.URL)
   request, _ := http.NewRequest("GET", url, nil)
   request.Header.Set("access_token", token)
 
@@ -304,7 +305,7 @@ func TestGetUserSaved(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/user/saved"
+  url := fmt.Sprintf("%s/user/saved", server.URL)
   request, _ := http.NewRequest("GET", url, nil)
   request.Header.Set("access_token", token)
 
@@ -328,7 +329,7 @@ func TestMakeGroup(t *testing.T) {
   }
   json := `{"anonymous":false,"group":"test"}`
   reader := strings.NewReader(json)
-  request, err2 := http.NewRequest("POST", "http://localhost:8000/group/modify", reader)
+  request, err2 := http.NewRequest("POST", fmt.Sprintf("%s/group/modify", server.URL), reader)
   if err2 != nil {
     t.Errorf("Problem setting up request for login.")
   }
@@ -354,7 +355,7 @@ func TestAdmin(t *testing.T) {
   //get admin level /group/auth - models.Grp
   json := `{"group":"test"}`
   reader := strings.NewReader(json)
-  request, err2 := http.NewRequest("POST", "http://localhost:8000/group/auth", reader)
+  request, err2 := http.NewRequest("POST", fmt.Sprintf("%s/group/auth", server.URL), reader)
   if err2 != nil {
     t.Errorf("Problem setting up permissions request.")
   }
@@ -372,7 +373,7 @@ func TestAdmin(t *testing.T) {
   //add member to group
   json2 := fmt.Sprintf(`{"group":"test", "user":"%s"}`, otherId)
   reader2 := strings.NewReader(json2)
-  request1, err3 := http.NewRequest("POST", "http://localhost:8000/group/admin", reader2)
+  request1, err3 := http.NewRequest("POST", fmt.Sprintf("%s/group/admin", server.URL), reader2)
   if err3 != nil {
     t.Errorf("Problem setting up request for add member")
   }
@@ -386,7 +387,7 @@ func TestAdmin(t *testing.T) {
   }
   reader3 := strings.NewReader(json2)
   //remove member from group
-  requestAgain, errAgain := http.NewRequest("PUT", "http://localhost:8000/group/admin", reader3)
+  requestAgain, errAgain := http.NewRequest("PUT", fmt.Sprintf("%s/group/admin", server.URL), reader3)
   if errAgain != nil {
     t.Errorf("Problem setting up request for add member")
   }
@@ -403,7 +404,7 @@ func TestAdmin(t *testing.T) {
   //get group -- good stuff
   sumRareJson := `{"group":"test","page":0}`
   readerNew := strings.NewReader(sumRareJson)
-  rerere, erere := http.NewRequest("POST", "http://localhost:8000/group/", readerNew)
+  rerere, erere := http.NewRequest("POST", fmt.Sprintf("%s/group/", server.URL), readerNew)
   if erere != nil {
     t.Errorf("Problem getting group.")
   }
@@ -420,7 +421,7 @@ func TestAdmin(t *testing.T) {
 
 func TestGetUserThreads(t *testing.T) {
   json := `{"page": 0}`
-  if !DoTest("POST", "http://localhost:8000/user/threads", json, 200) {
+  if !DoTest("POST", fmt.Sprintf("%s/user/threads", server.URL), json, 200) {
     t.Errorf("Couldn't get user threads")
   }
 }
@@ -435,22 +436,22 @@ func TestFriends(t *testing.T) {
     t.Errorf("Couldn't find username")
   }
   json := `{"username":"test", "friend":"test1"}`
-  if !DoTest("POST", "http://localhost:8000/user/friends", json, 204) {
+  if !DoTest("POST", fmt.Sprintf("%s/user/friends", server.URL), json, 204) {
     t.Errorf("Couldn't add user friend")
   }
   json1 := `{"username":"test1", "friend":"test"}`
-  if !DoTest1("PUT", "http://localhost:8000/user/friends", json1, 204) {
+  if !DoTest1("PUT", fmt.Sprintf("%s/user/friends", server.URL), json1, 204) {
     t.Errorf("Couldn't accept friends")
   }
   json2 := `{"username":"test", "friend":"test1"}`
-  if !DoTest("DELETE", "http://localhost:8000/user/friends", json2, 204) {
+  if !DoTest("DELETE", fmt.Sprintf("%s/user/friends", server.URL), json2, 204) {
     t.Errorf("Couldn't delete friend")
   }
 }
 
 func TestMakeThread(t *testing.T) {
   json := `{"group":"test","body":"hello","author":"test","content":"linkhere","anonymous":false}`
-  if !DoTest("POST", "http://localhost:8000/thread/modify", json, 200) {
+  if !DoTest("POST", fmt.Sprintf("%s/thread/modify", server.URL), json, 200) {
     t.Errorf("Make thread is messed up.")
   }
 }
@@ -469,15 +470,15 @@ func TestGetThread(t *testing.T) {
 
   //format string to get the thread
   json := fmt.Sprintf(`{"thread":"%s"}`, threadId.Hex())
-  if !DoTest("POST", "http://localhost:8000/thread/", json, 200) {
+  if !DoTest("POST", fmt.Sprintf("%s/thread/", server.URL), json, 200) {
     t.Error("Get thread is messed up")
   }
 
-  if !DoTest("POST", "http://localhost:8000/user/saved", json, 204) {
+  if !DoTest("POST", fmt.Sprintf("%s/user/saved", server.URL), json, 204) {
     t.Error("Couldn't save thread")
   }
 
-  if !DoTest("PUT", "http://localhost:8000/user/saved", json, 204) {
+  if !DoTest("PUT", fmt.Sprintf("%s/user/saved", server.URL), json, 204) {
     t.Error("Couldn't unsave thread")
   }
 }
@@ -486,20 +487,20 @@ func TestGetThread(t *testing.T) {
 func TestUsername(t *testing.T) {
   json := `{"username": "dingo"}`
 
-  if !DoTest1("POST", "http://localhost:8000/user/username", json, 204) {
+  if !DoTest1("POST", fmt.Sprintf("%s/user/username", server.URL), json, 204) {
     t.Errorf("Couldn't add username")
   }
 
-  if !DoTest1("PUT", "http://localhost:8000/user/username", json, 204) {
+  if !DoTest1("PUT", fmt.Sprintf("%s/user/username", server.URL), json, 204) {
     t.Errorf("Couldn't change username")
   }
 
   json1 := `{"username": "test1"}`
-  if !DoTest2("PUT", "http://localhost:8000/user/username", json1, "dingo", 204) {
+  if !DoTest2("PUT", fmt.Sprintf("%s/user/username", server.URL), json1, "dingo", 204) {
     t.Errorf("Couldn't change username")
   }
 
-  if !DoTest1("DELETE", "http://localhost:8000/user/username", json, 204) {
+  if !DoTest1("DELETE", fmt.Sprintf("%s/user/username", server.URL), json, 204) {
     t.Errorf("Couldn't rm username")
   }
 }
@@ -519,30 +520,30 @@ func TestPost(t *testing.T) {
   //format string to get the thread
   json := fmt.Sprintf(`{"thread":"%s", "body":"This is just a test", "content": "link",
     "responseTo":[],"anonymous":false}`, threadId.Hex())
-  if !DoTest("POST", "http://localhost:8000/thread/post", json, 200) {
+  if !DoTest("POST", fmt.Sprintf("%s/thread/post", server.URL), json, 200) {
     t.Error("Posting is messed up.")
   }
 
   postId := threads[0].Head.Id
   //another one -- edits posts
   morejson := fmt.Sprintf(`{"post":"%s", "body":"This is just a test"}`, postId.Hex())
-  if !DoTest("PUT", "http://localhost:8000/thread/post", morejson, 204) {
+  if !DoTest("PUT", fmt.Sprintf("%s/thread/post", server.URL), morejson, 204) {
     t.Error("Edit thread is messed up")
   }
 
   //delete that very post
   somejson := fmt.Sprintf(`{"post":"%s"}`, postId.Hex())
-  if !DoTest("DELETE", "http://localhost:8000/thread/post", somejson, 204) {
+  if !DoTest("DELETE", fmt.Sprintf("%s/thread/post", server.URL), somejson, 204) {
     t.Error("Delete thread is messed up")
   }
 }
 
 //simple gets
 func TestGets(t *testing.T) {
-  if !DoSimpleTest("GET", "http://localhost:8000/user/notifications", 200) {
+  if !DoSimpleTest("GET", fmt.Sprintf("%s/user/notifications", server.URL), 200) {
     t.Error("broken notifictions!")
   }
-  if !DoSimpleTest("GET", "http://localhost:8000/user/friends", 200) {
+  if !DoSimpleTest("GET", fmt.Sprintf("%s/user/friends", server.URL), 200) {
     t.Error("We couldn't even get friends")
   }
 }
@@ -557,14 +558,14 @@ func TestRemoveThread(t *testing.T) {
   //shouldn't throw an error but it might if something went wrong beforehand
   threadId := threads[0].Thread
   json := fmt.Sprintf(`{"thread":"%s"}`, threadId.Hex())
-  if !DoTest("DELETE", "http://localhost:8000/thread/modify", json, 204) {
+  if !DoTest("DELETE", fmt.Sprintf("%s/thread/modify", server.URL), json, 204) {
     t.Error("Delete thread is messed up")
   }
 }
 
 func TestRemoveGroup(t *testing.T) {
   json := `{"group":"test"}`
-  if !DoTest("DELETE", "http://localhost:8000/group/modify", json, 204) {
+  if !DoTest("DELETE", fmt.Sprintf("%s/group/modify", server.URL), json, 204) {
     t.Error("Delete thread is messed up")
   }
 }
@@ -579,7 +580,7 @@ func TestDectivateUser(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/auth/remove"
+  url := fmt.Sprintf("%s/auth/remove", server.URL)
   request, err := http.NewRequest("DELETE", url, nil)
   request.Header.Set("access_token", token)
 
@@ -601,7 +602,7 @@ func TestDectivateUser2(t *testing.T) {
   if err != nil {
     t.Errorf("Couldn't make token")
   }
-  url := "http://localhost:8000/auth/remove"
+  url := fmt.Sprintf("%s/auth/remove", server.URL)
   request, err := http.NewRequest("DELETE", url, nil)
   request.Header.Set("access_token", token)
 
@@ -612,4 +613,8 @@ func TestDectivateUser2(t *testing.T) {
   if res.StatusCode != 202 {
     t.Errorf("Unfortunate Statuscode for Decativating Users")
   }
+}
+
+func TestDeleteUsers(t *testing.T){
+
 }

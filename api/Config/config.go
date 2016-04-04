@@ -2,7 +2,7 @@
 package config
 
 var Port string = ":8000"
-var DB string = "mongodb://localhost:27017/dartboard"
+var DB string = "mongodb://localhost:27017/"
 var DBName string = "dartboard"
 var Secret string = ""
 var JwtSecret string = ""

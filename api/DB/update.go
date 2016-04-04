@@ -219,7 +219,7 @@ func DeleteUser(user bson.ObjectId) error {
   }
 
   //remove our entire friends list
-  rmFriends := bson.M{"set": bson.M{"friends": make([]bson.ObjectId,0)}}
+  rmFriends := bson.M{"$set": bson.M{"friends": make([]bson.ObjectId,0)}}
 
   //run update to user (found by _id)
   if err := db.C("users").Update(bson.M{"_id": user}, rmFriends); err != nil {
