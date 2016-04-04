@@ -38,6 +38,9 @@ func init() {
   //POST login user
   AuthMux.HandleFunc("/auth/login", login)
 
+  //POST password recovery
+  AuthMux.HandleFunc("/auth/recovery", recovery)
+
   //POST update password
   AuthMux.HandleFunc("/auth/changepass", updatePassword)
 
@@ -95,9 +98,48 @@ func register(res http.ResponseWriter, req *http.Request) {
   res.WriteHeader(http.StatusNoContent)
 }
 
+// Handle /user/register
+func recovery(res http.ResponseWriter, req *http.Request) {
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+    return
+  }
+  //make room for user
+  var rec models.Recovery
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&rec); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //create user since forms are valid
+  id := db.GetIdFromEmail(rec.Email);
+
+  //don't continue if fake email
+  if id == "" {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //makes token with id hex baked in
+  token, err := util.MakeToken(id)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //send user validation email
+  recoverEmail(rec.Email, token)
+
+  //statuscode 204
+  res.WriteHeader(http.StatusCreated)
+}
+
 // Handle /user/activate
 func activate(res http.ResponseWriter, req *http.Request) {
-  if req.Method != "POST" {
+  if req.Method != "GET" {
     http.Error(res, http.StatusText(405), 405)
     return
   }
@@ -130,8 +172,8 @@ func activate(res http.ResponseWriter, req *http.Request) {
         return
       }
 
-      //send the headers with a 204 response code -- No Content
-      res.WriteHeader(http.StatusNoContent)
+      //send the headers with a 202 response code -- No Content
+      res.WriteHeader(http.StatusAccepted)
     } else {
 
       //return err
@@ -175,8 +217,8 @@ func deactivate(res http.ResponseWriter, req *http.Request) {
         return
       }
 
-      //send the headers with a 204 response code -- No Content
-      res.WriteHeader(http.StatusNoContent)
+      //send the headers with a 202 response code -- No Content
+      res.WriteHeader(http.StatusAccepted)
     } else {
 
       //return err
@@ -191,7 +233,6 @@ func login(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(405), 405)
     return
   }
-
 
   //setup struct to recieve json
   var user models.AuthUser

@@ -1,5 +1,5 @@
 /**
- *  server.go -- Starts Dartboard Server
+ *  Server.go -- Starts Dartboard Server
  */
 package server
 
@@ -12,26 +12,26 @@ import (
 )
 
 //Use this to handle routes
-var server = http.NewServeMux()
+var Server = http.NewServeMux()
 
 func init() {
   //handle group manipulation routes
-  server.Handle("/group/", util.Log(routes.GroupMux))
+  Server.Handle("/group/", util.Log(routes.GroupMux))
 
   //handle auth routes
-  server.Handle("/auth/", util.Log(routes.AuthMux))
+  Server.Handle("/auth/", util.Log(routes.AuthMux))
 
   //handle thread manipulation routes
-  server.Handle("/thread/", util.Log(routes.ThreadMux))
+  Server.Handle("/thread/", util.Log(routes.ThreadMux))
 
   //handle user routes
-  server.Handle("/user/", util.Log(routes.UserMux))
+  Server.Handle("/user/", util.Log(routes.UserMux))
 
 }
 
 func Start(port string) {
   //Start Server
-  go http.ListenAndServe(port, server) // set listen port
+  go http.ListenAndServe(port, Server) // set listen port
 }
 
 func Close() {

@@ -96,6 +96,41 @@ func IsMember(group string, user string) bool {
   return false
 }
 
+//[READ] checks if user is a member of a group
+func GetPermission(group string, user string) *models.Permission {
+  db := Connection.DB(config.DBName)
+  var g models.Group
+  err := db.C("groups").Find(bson.M{"name": group}).One(&g)
+
+  //check if something went wrong finding the group
+  if err != nil {
+    return nil
+  }
+
+  if user == g.Author.Hex() {
+    return &models.Permission{
+      Author: true,
+      Admin: true,
+    }
+  }
+
+  //bring back group metadata
+  for _, member := range g.Admins {
+    if member.Hex() == user {
+      return &models.Permission{
+            Author: false,
+            Admin: true,
+      }
+    }
+  }
+
+  //this shouldn't happen if we're authors or admins
+  return &models.Permission{
+    Author: false,
+    Admin: false,
+  }
+}
+
 /**
     THREADS -------------------------------------------------------------
  */
@@ -249,13 +284,14 @@ func LoginCheck(email, hashword string) (string, bool) {
   var usr struct {
     Password string `bson:"password"`
     Id bson.ObjectId `bson:"_id"`
+    Activated bool `bson:"activated"`
   }
 
   //run query, only getting password
-  err := db.C("users").Find(bson.M{"email": email}).Select(bson.M{"password": 1, "_id": 1}).One(&usr);
+  err := db.C("users").Find(bson.M{"email": email}).Select(bson.M{"password": 1, "_id": 1, "activated": 1}).One(&usr);
 
   //if there's a problem, or unmatching passwords, return false
-  if err != nil || usr.Password != hashword {
+  if err != nil || usr.Password != hashword || !usr.Activated {
     return "", false
   }
 
@@ -377,6 +413,21 @@ func GetIdFromUsername(username string) string {
   }
   fields := bson.M{"_id": 1}
   if err := db.C("users").Find(bson.M{"username": username}).Select(fields).One(&userData); err != nil {
+    return ""
+  }
+
+  return userData.Id.Hex()
+}
+
+//[READ] gets user data -- posts, watchlist, thread likes, friends -- just returns what we need
+func GetIdFromEmail(email string) string {
+  db := Connection.DB(config.DBName)
+
+  var userData struct {
+    Id bson.ObjectId `bson:"_id"`
+  }
+  fields := bson.M{"_id": 1}
+  if err := db.C("users").Find(bson.M{"email": email}).Select(fields).One(&userData); err != nil {
     return ""
   }
 

@@ -25,10 +25,13 @@ func init() {
   //Handles POST to get group -- paginated
   GroupMux.HandleFunc("/group/", getGroup)
 
+  //Handles POST to get permission
+  GroupMux.HandleFunc("/group/auth", getPermission)
+
   //Handles POST, and DELETE for groups -- administration (creating and deleting)
   GroupMux.HandleFunc("/group/modify", grp)
 
-  //Handles GET, PUT for Admins in groups
+  //Handles POST, PUT for Admins in groups
   GroupMux.HandleFunc("/group/admin", admn)
 }
 
@@ -47,7 +50,7 @@ func grp(res http.ResponseWriter, req *http.Request) {
 // Handle /group/admin
 func admn(res http.ResponseWriter, req *http.Request) {
   switch req.Method {
-  case "GET" :
+  case "POST" :
     addAdmin(res, req)
   case "PUT":
     removeAdmin(res, req)
@@ -171,7 +174,7 @@ func createGroup(res http.ResponseWriter, req *http.Request) {
 //handle DELETE /group/
 func removeGroup(res http.ResponseWriter, req *http.Request) {
   //data returned by request
-  var reqGroup models.DeleteGroup
+  var reqGroup models.Grp
 
   //POST request handling
   decoder := json.NewDecoder(req.Body)
@@ -218,7 +221,45 @@ func removeGroup(res http.ResponseWriter, req *http.Request) {
   }
 }
 
-//handle GET /group/admin
+//handle POST /group/auth
+func getPermission(res http.ResponseWriter, req *http.Request) {
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //manage post
+  var post models.Grp
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&post); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //get token from header
+  id := util.GetId(req)
+
+  //get permission
+  permission := db.GetPermission(post.Group, id)
+
+  if permission == nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //set headers
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(permission); err != nil {
+    panic(err)
+  }
+}
+
+//handle POST /group/admin
 func addAdmin(res http.ResponseWriter, req *http.Request) {
 
   //data returned by request

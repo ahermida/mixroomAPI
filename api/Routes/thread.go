@@ -31,7 +31,7 @@ func init() {
   //POST for getting thread
   ThreadMux.HandleFunc("/thread/", getThread)
 
-  //POST for creating thread, DELETE removing thread, GET thread
+  //POST for creating thread, DELETE removing thread
   ThreadMux.HandleFunc("/thread/modify", thrd)
 
   //POST for creating a post, DELETE for removing it, PUT for changing it

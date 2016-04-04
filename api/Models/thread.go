@@ -1,6 +1,5 @@
 /*
   thread.go -- models for thread operations
-  thread model
 */
 package models
 

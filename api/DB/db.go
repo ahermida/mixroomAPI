@@ -24,7 +24,7 @@ func init() {
   Connection.SetMode(mgo.Monotonic, true)
   ensureUserIndex()
   ensureGroupIndex()
-  //reserveNamespaces()
+  reserveNamespaces()
 }
 
 //Makes Sure that Users cannot be duplicates

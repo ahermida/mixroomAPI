@@ -63,6 +63,10 @@ type AuthedUser struct {
   Token string `json:"token"`
 }
 
+type Recovery struct {
+  Email string `json:"email"`
+}
+
 type ChangePW struct {
   Password string `json:"password"`
   NewPassword string `json:"newPassword"`

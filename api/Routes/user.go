@@ -26,10 +26,10 @@ func init() {
   //GET get user info
   UserMux.HandleFunc("/user/", getUser)
 
-  //POST & PUT add and removed saved
+  //GET, POST & PUT add and removed saved
   UserMux.HandleFunc("/user/saved", saved)
 
-  //POST get user's saved threads
+  //POST get user's threads
   UserMux.HandleFunc("/user/threads", threads)
 
   //POST add a username, PUT to change it, DELETE to remove it

@@ -47,11 +47,16 @@ type SendGroup struct {
   Threads []Mthread `json:"threads"`
 }
 
-type DeleteGroup struct {
+type Grp struct {
   Group string `json:"group"`
 }
 
 type GroupAdmin struct {
   User  string `json:"user"`
   Group string `json:"group"`
+}
+
+type Permission struct {
+  Admin  bool `json:"admin"`
+  Author bool `json:"author"`
 }
