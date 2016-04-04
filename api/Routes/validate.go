@@ -1,9 +1,6 @@
 /*
-  Form Validation Functions -- used by routes
-  --NOTE: I'm pretty bad at Regexp stuff, trying to get better,
-          but here's the source for the Username one:
-          http://stackoverflow.com/a/12019115/6137013
- */
+   validate.go
+*/
 package routes
 
 import (

@@ -1,9 +1,5 @@
 /*
    User Routes that will be used to manage basic user management utils
-
-   handles: registering user, authorizing user, logging in user,
-            updating user's password, removing a user
-            -- split up for simplicity
 */
 package routes
 

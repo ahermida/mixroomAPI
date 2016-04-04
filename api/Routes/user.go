@@ -1,10 +1,5 @@
 /*
    User Routes that will be used to Create, Read, and Update user
-   Creates a ServeMux from the default http package
-
-   handles: updating user's username, getting a user's friends, adding a saved thread,
-            getting a user's saved threads, removing a saved thread, adding a friend,
-            removing a friend, getting notifications, add username, remove username
 */
 package routes
 
@@ -156,7 +151,7 @@ func username(res http.ResponseWriter, req *http.Request) {
     http.Error(res, http.StatusText(400), 400)
     return
   }
-  
+
   var err error
   if req.Method == "POST" {
     err = db.AddUsername(user.Username, bson.ObjectIdHex(id))

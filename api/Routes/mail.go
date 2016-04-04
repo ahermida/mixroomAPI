@@ -1,5 +1,5 @@
 /*
-  Send Mail in Golang via SMTP
+   Send Mail in Golang via SMTP
  */
 package routes
 

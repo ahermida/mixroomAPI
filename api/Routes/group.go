@@ -1,9 +1,6 @@
 /*
    API Routes that will be used by the source of the application.
    Creates a ServeMux from the default http package
-
-   handles: creating a group, removing a group, getting a group,
-            adding admins, removing admins
 */
 package routes
 

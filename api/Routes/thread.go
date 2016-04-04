@@ -2,14 +2,6 @@
 /*
    API Routes that will be used by the source of the application.
    Creates a ServeMux from the default http package
-
-   handles: creating a thread, creating a post, removing a post,
-            removing a thread, changing a post
-            -- could be written in this file
-            TODO: multipart form data (blobstore), handle mentions,
-                  handle response notifications -- maybe this should
-                  be done via WS (last 2)
-
 */
 package routes
 
