@@ -94,15 +94,6 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
     Group: group,
   }
 
-  //set thread in post
-  post.Thread = thread.Id
-
-  //save post
-  if err := db.C("posts").Insert(post); err != nil {
-    //insert it, shouldn't result in error
-    return err
-  }
-
   //add thread to threads, this is where we'll query for specific thread views
   if err := db.C("threads").Insert(thread); err != nil {
     //if there's an error on inserting, return the error
@@ -144,6 +135,15 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
         return err
       }
     }
+  }
+  
+  //set thread in post
+  post.Thread = thread.Id
+
+  //save post
+  if err := db.C("posts").Insert(post); err != nil {
+    //insert it, shouldn't result in error
+    return err
   }
 
   //return nil error -- nothing went wrong

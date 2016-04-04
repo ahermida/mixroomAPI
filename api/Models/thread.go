@@ -33,7 +33,7 @@ type ResThread struct {
 */
 
 type GetThread struct {
-  Thread string `json:"page"`
+  Thread string `json:"thread"`
 }
 
 type NewThread struct {

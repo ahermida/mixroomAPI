@@ -233,11 +233,10 @@ func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
   for _, save := range user.Saved {
     var item models.Mthread
     err := db.C("mthreads").Find(bson.M{"_id": save}).One(&item)
-    if err != nil {
-      return nil, err
+    if err == nil {
+      //add thread to grouping
+      threads = append(threads, item)
     }
-    //add thread to grouping
-    threads = append(threads, item)
   }
   return threads, nil
 }

@@ -10,7 +10,7 @@ import (
 
 type Post struct {
 	Id         bson.ObjectId   `bson:"_id,omitempty" json:"id"`
-  Thread     bson.ObjectId   `bson:"thread" json:"-"`
+  Thread     bson.ObjectId   `bson:"thread,omitempty" json:"-"`
   Created    time.Time       `bson:"created" json:"created"`
 	Author     string          `bson:"author" json:"author"`
   AuthorId   bson.ObjectId   `bson:"authorId,omitempty" json:"-"`

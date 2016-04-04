@@ -42,8 +42,8 @@ package server
   </Groups>
 
   <Threads> ---------------------------------------------------
-  POST -- Get Thread ("/thread/", getThread)                      - models.GetThread
-  POST -- Create Thread ("/thread/modify", thrd)                  - models.NewThread
+  xPOST -- Get Thread ("/thread/", getThread)                      - models.GetThread
+  xPOST -- Create Thread ("/thread/modify", thrd)                  - models.NewThread
   DELETE -- Delete thread ("/thread/modify", thrd)                - models.RemoveThread
   POST -- Create Post ("/thread/post", pst)                       - models.NewPost
   DELETE -- Delete Post ("/thread/post", pst)                     - models.DeletePost
@@ -69,20 +69,6 @@ func init() {
   //grab mux from server.go and run it
   server = httptest.NewServer(Server)
 }
-
-/*
-json := `{"username": "dennis", "balance": 200}`
-reader = strings.NewReader(json) //Convert string to reader
-request, err := http.NewRequest("POST", url, reader) //Create request with JSON body
-request.Header.Set("name", "value")
-res, err := http.DefaultClient.Do(request)
-if err != nil {
-    t.Error(err) //Something is wrong while sending request
-}
-if res.StatusCode != 201 {
-     t.Errorf("Success expected: %d", res.StatusCode)
-}
-*/
 
 func TestCreateUser(t *testing.T) {
   json := `{"username":"test","email":"dkraken@thekrakenisgongetu.com","password":"testtest1"}`
@@ -321,7 +307,36 @@ func TestAdmin(t *testing.T) {
     t.Errorf("Problem getting group -- statuscode not 200")
   }
 }
+/*
+  Let it be known that at this point I gave and decided to write a function
+  to do this json thing automatically -- feeling stupid af for not doing this
+  earlier...
+*/
+func DoTest(method, url, json string, expected int) bool {
+  id := db.GetIdFromUsername("test1")
+  if id == "" {
+    t.Errorf("Couldn't find username for Group Creation")
+  }
+  token, err := util.MakeToken(id)
+  if err != nil {
+    t.Errorf("Couldn't make token for group.")
+    return false
+  }
+  reader := strings.NewReader(json)
+  request, err := http.NewRequest(method, url, reader)
+  request.Header.Set("access_token", token)
 
+  res, errSending := http.DefaultClient.Do(request)
+  if errSending != nil {
+    t.Error("Couldn't send request.")
+    return false
+  }
+  if res.StatusCode != expected {
+    t.Errorf("StatusCode wasn't correct.")
+    return false
+  }
+  return true
+}
 func TestMakeThread(t *testing.T) {
   // type NewThread struct {
   //   Group     string `json:"group"`
@@ -330,7 +345,76 @@ func TestMakeThread(t *testing.T) {
   //   Content   string `json:"content"`
   //   Anonymous bool   `json:"anonymous"`
   // }
-  
+  json := `{"group":"test","body":"hello","author":"test","content":"linkhere",anonymous:false}`
+  if !DoTest("POST", "http://localhost:8000/thread/modify", json, 200) {
+    t.Errorf("Make thread is messed up.")
+  }
+}
+//can't actually get thread because we don't have ID of thread -- so let's get it
+func TestGetThread(t *testing.T) {
+
+  //get thread ID because we need it to move on
+  threads, err := db.GetGroup("test", 0)
+  if err != nil {
+    t.Errorf("couldn't actually get the group")
+  }
+
+  //shouldn't throw an error but it might if something went wrong beforehand
+  threadId := threads[0].Thread
+
+  //format string to get the thread
+  json := fmt.Sprintf(`{"thread":"%s"}`, threadId.Hex())
+  if !DoTest("POST", "http://localhost:8000/thread/", json, 200) {
+    t.Error("Get thread is messed up")
+  }
+}
+
+// type NewPost struct {
+//   Body       string   `json:"body"`
+//   Content    string   `json:"content"`
+//   Author     string   `json:"author"`
+//   ResponseTo []string `json:"responseTo"`
+//   Anonymous  bool     `json:"anonymous"`
+//   Thread     string   `json:"thread"`
+// }
+//
+// type EditPost struct {
+//   Body string `json:"body"`
+//   Post string `json:"post"`
+//   Id   string `json:"id,omitempty"`
+// }
+//
+// type DeletePost struct {
+//   Post string `json:"post"`
+//   Id   string `json:"id,omitempty"`
+// }
+
+//can't actually get thread because we don't have ID of thread -- so let's get it
+func TestPost(t *testing.T) {
+
+  //get thread ID because we need it to move on
+  threads, err := db.GetGroup("test", 0)
+  if err != nil {
+    t.Errorf("couldn't actually get the group")
+  }
+
+  //shouldn't throw an error but it might if something went wrong beforehand
+  threadId := threads[0].Thread
+
+  //format string to get the thread
+  json := fmt.Sprintf(`{"thread":"%s", "body":"This is just a test", "content": "link",
+    "responseTo":[],"anonymous":false}`, threadId.Hex())
+  if !DoTest("POST", "http://localhost:8000/thread/post", json, 200) {
+    t.Error("Posting is messed up.")
+  }
+
+  postId := threads[0].Head.Id
+  //another one -- edits posts
+  morejson := fmt.Sprintf(`{"post":"%s", "body":"This is just a test", }`, threadId.Hex())
+  if !DoTest("PUT", "http://localhost:8000/thread/post", morejson, 200) {
+    t.Error("Get thread is messed up")
+  }
+
 }
 
 func TestDectivateUser(t *testing.T) {
