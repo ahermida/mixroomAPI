@@ -8,46 +8,46 @@ package server
   (31 of them)
                                                                     STRUCT INPUT
   <Auth> ------------------------------------------------------
-  xPOST -- register user ("/auth/register", register)              - models.CreateUser
-  xPOST -- recover user pw ("/auth/recovery", recovery)            - models.Recovery
-  xGET -- activate user ("/auth/activate", activate)               - [id required]
-  xDELETE -- deactivate user ("/auth/remove", deactivate)          - [id required]
-  xPOST -- login user ("/auth/login", login)                       - models.AuthUser
-  xPOST -- update password ("/auth/changepass", updatePassword)    - models.ChangePW
+  POST -- register user ("/auth/register", register)              - models.CreateUser
+  POST -- recover user pw ("/auth/recovery", recovery)            - models.Recovery
+  GET -- activate user ("/auth/activate", activate)               - [id required]
+  DELETE -- deactivate user ("/auth/remove", deactivate)          - [id required]
+  POST -- login user ("/auth/login", login)                       - models.AuthUser
+  POST -- update password ("/auth/changepass", updatePassword)    - models.ChangePW
   </Auth>
 
   <User> ------------------------------------------------------
-  xGET get user info ("/user/", getUser)                           - [id required]
-  xGET get saved ("/user/saved", saved)                            - [id required]
-  xPOST add saved ("/user/saved", saved)                           - models.Saved
-  xPUT removed saved ("/user/saved", saved)                        - models.Saved
-  xPOST get user's threads ("/user/threads", threads)              - models.GetUserFeed
-  xPOST add a username ("/user/username", username)                - models.Username
-  xPUT to change it ("/user/username", username)                   - models.Username
-  xDELETE to remove it ("/user/username", username)                - models.Username
-  xGET get all notifications ("/user/notifications", notifications)- [id required]
-  xGET -- gets friends list ("/user/friends", friends)             - [id required]
-  xPOST add a friend -- creates request ("/user/friends", friends) - models.Friend
-  xPUT accept it ("/user/friends", friends)                        - models.Friend
-  xDELETE to remove it ("/user/friends", friends)                  - models.Friend
+  GET get user info ("/user/", getUser)                           - [id required]
+  GET get saved ("/user/saved", saved)                            - [id required]
+  POST add saved ("/user/saved", saved)                           - models.Saved
+  PUT removed saved ("/user/saved", saved)                        - models.Saved
+  POST get user's threads ("/user/threads", threads)              - models.GetUserFeed
+  POST add a username ("/user/username", username)                - models.Username
+  PUT to change it ("/user/username", username)                   - models.Username
+  DELETE to remove it ("/user/username", username)                - models.Username
+  GET get all notifications ("/user/notifications", notifications)- [id required]
+  GET -- gets friends list ("/user/friends", friends)             - [id required]
+  POST add a friend -- creates request ("/user/friends", friends) - models.Friend
+  PUT accept it ("/user/friends", friends)                        - models.Friend
+  DELETE to remove it ("/user/friends", friends)                  - models.Friend
   </User>
 
   <Groups> ----------------------------------------------------
-  xPOST -- to get group -- paginated ("/group/", getGroup)         - models.GetGroup
-  xPOST -- check if admin or author ("/group/auth", getPermission) - models.Grp
-  xPOST -- for groups -- creating them ("/group/modify", grp)      - models.CreateGroup
-  xDELETE -- for groups -- deleting ("/group/modify", grp)         - models.Grp
-  xPOST -- set admins for group ("/group/admin", admn)             - models.GroupAdmin
-  xPUT -- delete Admins in groups ("/group/admin", admn)           - models.GroupAdmin
+  POST -- to get group -- paginated ("/group/", getGroup)         - models.GetGroup
+  POST -- check if admin or author ("/group/auth", getPermission) - models.Grp
+  POST -- for groups -- creating them ("/group/modify", grp)      - models.CreateGroup
+  DELETE -- for groups -- deleting ("/group/modify", grp)         - models.Grp
+  POST -- set admins for group ("/group/admin", admn)             - models.GroupAdmin
+  PUT -- delete Admins in groups ("/group/admin", admn)           - models.GroupAdmin
   </Groups>
 
   <Threads> ---------------------------------------------------
-  xPOST -- Get Thread ("/thread/", getThread)                      - models.GetThread
-  xPOST -- Create Thread ("/thread/modify", thrd)                  - models.NewThread
-  xDELETE -- Delete thread ("/thread/modify", thrd)                - models.RemoveThread
-  xPOST -- Create Post ("/thread/post", pst)                       - models.NewPost
-  xDELETE -- Delete Post ("/thread/post", pst)                     - models.DeletePost
-  xPUT -- Edit Post ("/thread/post", pst)                          - models.EditPost
+  POST -- Get Thread ("/thread/", getThread)                      - models.GetThread
+  POST -- Create Thread ("/thread/modify", thrd)                  - models.NewThread
+  DELETE -- Delete thread ("/thread/modify", thrd)                - models.RemoveThread
+  POST -- Create Post ("/thread/post", pst)                       - models.NewPost
+  DELETE -- Delete Post ("/thread/post", pst)                     - models.DeletePost
+  PUT -- Edit Post ("/thread/post", pst)                          - models.EditPost
   </Threads>
 
 */
