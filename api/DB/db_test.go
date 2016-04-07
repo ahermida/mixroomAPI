@@ -117,6 +117,13 @@ func TestUsers(t *testing.T) {
 
   store["id1"] = id
   store["id2"] = id2
+
+  //AddName(id bson.ObjectId, name string)
+  errName := AddName(bson.ObjectIdHex(id), "Octodan is Here")
+
+  if errName != nil {
+    t.Errorf("Couldn't add name")
+  }
 }
 
 func TestFriends(t *testing.T) {
@@ -293,6 +300,13 @@ func TestThreads(t *testing.T) {
   if len(resThread.Posts) == 0 {
     t.Errorf("GetThread had empty posts! That's a problem")
   }
+
+  //Search function
+  _, err := SearchThreads(store["id1"], "hello", 0)
+  if err != nil {
+    t.Errorf("Problem searching threads!")
+  }
+  
   //DeletePost(postID, userID bson.ObjectId) error
   errDeletePost := DeletePost(pst.Id, bson.ObjectIdHex(store["id1"]))
   if errDeletePost != nil {

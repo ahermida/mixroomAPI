@@ -154,6 +154,22 @@ func ActivateAccount(user bson.ObjectId) error {
   return err
 }
 
+//[UPDATE] activates account (when email is verified)
+func AddName(user bson.ObjectId, name string) error {
+
+  //get proper DB
+  db := Connection.DB(config.DBName)
+
+  //setup change -- modifying activated value in user
+  change := bson.M{"$set": bson.M{"name" : name}}
+
+  //run update to user (found by _id)
+  err := db.C("users").Update(bson.M{"_id": user}, change)
+
+  //should be nil if nothing went wrong
+  return err
+}
+
 //[UPDATE] changes password for a given uid
 func ChangePassword(newPassword string, oldPassword string, user bson.ObjectId) error {
   //get proper DB

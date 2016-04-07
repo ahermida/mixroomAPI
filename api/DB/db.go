@@ -24,6 +24,8 @@ func init() {
   Connection.SetMode(mgo.Monotonic, true)
   ensureUserIndex()
   ensureGroupIndex()
+  ensureMthreadTextIndex()
+  ensureUserTextIndex()
   reserveNamespaces()
 }
 
@@ -45,6 +47,35 @@ func ensureUserIndex() {
     log.Panic(err)
   }
 }
+
+func ensureUserTextIndex() {
+  index := mgo.Index{
+    Key: []string{"$text:name", "$text:usernames"},
+  }
+
+  //ensure indices are unique
+  err := Connection.DB(config.DBName).C("users").EnsureIndex(index)
+
+  //index needs to be unique
+  if err != nil {
+    log.Panic(err)
+  }
+}
+
+func ensureMthreadTextIndex() {
+  index := mgo.Index{
+    Key: []string{"$text:head.body"},
+  }
+
+  //ensure indices are unique
+  err := Connection.DB(config.DBName).C("mthreads").EnsureIndex(index)
+
+  //index needs to be unique
+  if err != nil {
+    log.Panic(err)
+  }
+}
+
 
 //Makes Sure that groups cannot be duplicates
 func ensureGroupIndex() {

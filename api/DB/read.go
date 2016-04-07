@@ -135,54 +135,100 @@ func GetPermission(group string, user string) *models.Permission {
     THREADS -------------------------------------------------------------
  */
 
- //[READ] gets all posts for a given thread
- func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
+//[READ] gets all posts for a given thread
+func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
 
-   //call DB
-   db := Connection.DB(config.DBName)
+ //call DB
+ db := Connection.DB(config.DBName)
 
-   //thread model
-   var thread models.Thread
+ //thread model
+ var thread models.Thread
 
-   //get thread
-   if err := db.C("threads").FindId(threadID).One(&thread); err != nil {
+ //get thread
+ if err := db.C("threads").FindId(threadID).One(&thread); err != nil {
+   return nil, err
+ }
+
+ //if thread is dead, don't return it.
+ if !thread.Alive {
+   return nil, errors.New("Couldn't get thread, it's dead")
+ }
+
+ //make new thread to be resolved
+ resThread := &models.ResThread{
+   Id: thread.Id,
+   Created: thread.Created,
+   Posts: make([]models.Post,0),
+   Alive: thread.Alive,
+   Group: thread.Group,
+   Mthread: thread.Mthread.Hex(),
+ }
+
+ //add reply to each of the posts that it was to
+ for _, postId := range thread.Posts {
+
+   //make room for post
+   var post models.Post
+
+   //get post by ID
+   if err := db.C("posts").Find(bson.M{"_id": postId}).One(&post); err != nil {
+     //insert it, shouldn't result in error
      return nil, err
    }
 
-   //if thread is dead, don't return it.
-   if !thread.Alive {
-     return nil, errors.New("Couldn't get thread, it's dead")
-   }
-
-   //make new thread to be resolved
-   resThread := &models.ResThread{
-     Id: thread.Id,
-     Created: thread.Created,
-     Posts: make([]models.Post,0),
-     Alive: thread.Alive,
-     Group: thread.Group,
-     Mthread: thread.Mthread.Hex(),
-   }
-
-   //add reply to each of the posts that it was to
-   for _, postId := range thread.Posts {
-
-     //make room for post
-     var post models.Post
-
-     //get post by ID
-     if err := db.C("posts").Find(bson.M{"_id": postId}).One(&post); err != nil {
-       //insert it, shouldn't result in error
-       return nil, err
-     }
-
-     //merge slices
-     resThread.Posts = append(resThread.Posts, post)
-   }
-
-   //return thread and nil error (nothing went wrong)
-   return resThread, nil
+   //merge slices
+   resThread.Posts = append(resThread.Posts, post)
  }
+
+ //return thread and nil error (nothing went wrong)
+ return resThread, nil
+}
+
+//[READ] search posts text index for a given string
+func SearchThreads(id string, str string, page int) ([]models.Mthread, error) {
+  db := Connection.DB(config.DBName)
+
+  //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items -- project all fields
+  pipeline := []bson.M{bson.M{"$match": bson.M{"$text": bson.M{"$search": str}}},
+                       bson.M{"$sort": bson.M{"created": -1}},
+                       bson.M{"$limit": 30},
+                       bson.M{"$skip": page * 30},
+                       bson.M{"$project": bson.M{
+                         "_id": 1,
+                         "id": 1,
+                         "Created": 1,
+                         "thread": 1,
+                         "threadId": 1,
+                         "head": 1,
+                         "group": 1}}}
+
+  //set up Pipe to actually run query
+  pipe := db.C("mthreads").Pipe(pipeline)
+
+  //for population later
+  var threads []models.Mthread
+
+  //run it
+  if err := pipe.All(&threads); err != nil {
+
+    //if something is wrong, return err
+    return nil, err
+  }
+
+  //could do it in place, but it's much easier to just have a slice that we can append to
+  var goodThreads = make([]models.Mthread, 0)
+
+  //filter out the threads that we're not allowed to see
+  for _, el := range threads {
+    if IsMember(el.Group, id){
+      goodThreads = append(goodThreads, el)
+    }
+  }
+
+  //else return the threads, and a nil error
+  return goodThreads, nil
+}
+
 
 //[READ] returns group that the given thead (hex string) belongs to
 func GetThreadParent(thread string) string {

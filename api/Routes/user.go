@@ -24,6 +24,9 @@ func init() {
   //GET, POST & PUT add and removed saved
   UserMux.HandleFunc("/user/saved", saved)
 
+  //POST change user's name
+  UserMux.HandleFunc("/user/name", name)
+
   //POST get user's threads
   UserMux.HandleFunc("/user/threads", threads)
 
@@ -358,4 +361,43 @@ func notifications(res http.ResponseWriter, req *http.Request) {
   if err := json.NewEncoder(res).Encode(sendNotes); err != nil {
       panic(err)
   }
+}
+
+
+// Handle POST to /user/name
+func name(res http.ResponseWriter, req *http.Request) {
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  var post models.Name
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&post); err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //check if name is valid
+  if !validateName(post.Name){
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  //get notifications
+  err := db.AddName(bson.ObjectIdHex(id), post.Name)
+
+  //let ourselves know if something went wrong
+  if err != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  res.WriteHeader(http.StatusNoContent)
 }

@@ -19,6 +19,7 @@ package server
   <User> ------------------------------------------------------
   GET get user info ("/user/", getUser)                           - [id required]
   GET get saved ("/user/saved", saved)                            - [id required]
+  POST add name ("/user/name", name)                              - models.Name
   POST add saved ("/user/saved", saved)                           - models.Saved
   PUT removed saved ("/user/saved", saved)                        - models.Saved
   POST get user's threads ("/user/threads", threads)              - models.GetUserFeed
@@ -484,6 +485,14 @@ func TestGetThread(t *testing.T) {
   }
 }
 
+//test name endpoint
+func TestName(t *testing.T) {
+  json := `{"name": "Octopus Is Animal"}`
+  if !DoTest("POST", fmt.Sprintf("%s/user/name", server.URL), json, 204) {
+    t.Errorf("Couldn't change name")
+  }
+}
+
 //test usernames
 func TestUsername(t *testing.T) {
   json := `{"username": "dingo"}`
@@ -536,6 +545,15 @@ func TestPost(t *testing.T) {
   somejson := fmt.Sprintf(`{"post":"%s"}`, postId.Hex())
   if !DoTest("DELETE", fmt.Sprintf("%s/thread/post", server.URL), somejson, 204) {
     t.Error("Delete thread is messed up")
+  }
+}
+
+//test search threads
+func TestSearch(t *testing.T) {
+  //format string to get the thread
+  json :=`{"text":"e", "page":0}`
+  if !DoTest("POST", fmt.Sprintf("%s/thread/search", server.URL), json, 200) {
+    t.Error("Search is messed up.")
   }
 }
 

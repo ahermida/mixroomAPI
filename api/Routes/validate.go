@@ -40,3 +40,9 @@ func validateGeneral(try string) bool {
   regex := regexp.MustCompile(`[^a-zA-Z0-9]`)
   return !regex.MatchString(try) && len(try) < 15
 }
+
+// function to validate username field, group name field -- 15 length
+func validateName(try string) bool {
+  regex := regexp.MustCompile(`[^a-zA-Z\s]`)
+  return !regex.MatchString(try) && len(try) < 35
+}

@@ -12,7 +12,8 @@ type User struct {
 	Id            bson.ObjectId   `bson:"_id,omitempty"`
   Created       time.Time       `bson:"created"`
 	Username      string          `bson:"username"`
-  Usernames     []string        `bson:"usernames,omitempty"`
+  Usernames     []string        `bson:"usernames"`
+  Name          string          `bson:"name",omitempty`
 	Email         string          `bson:"email"`
   Password      string          `bson:"password"`
   Friends       []bson.ObjectId `bson:"friends"`
@@ -79,4 +80,8 @@ type Saved struct {
 
 type Username struct {
   Username string `json:"username"`
+}
+
+type Name struct {
+  Name string `json:"name"`
 }

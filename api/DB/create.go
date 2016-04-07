@@ -136,7 +136,7 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
       }
     }
   }
-  
+
   //set thread in post
   post.Thread = thread.Id
 

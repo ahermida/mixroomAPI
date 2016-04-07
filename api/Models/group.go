@@ -60,3 +60,8 @@ type Permission struct {
   Admin  bool `json:"admin"`
   Author bool `json:"author"`
 }
+
+type Search struct {
+  Text string `json:"text"`
+  Page int    `json:"page"`
+}
