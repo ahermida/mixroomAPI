@@ -1,5 +1,5 @@
 /*
-  This is the API for dartboard, an anonymous social app in the works.
+  This is the API for dartboard
 */
 package main
 
