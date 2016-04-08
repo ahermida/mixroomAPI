@@ -22,10 +22,14 @@ func init() {
     log.Panic(err)
   }
   Connection.SetMode(mgo.Monotonic, true)
+
+  //Create Indices
   ensureUserIndex()
   ensureGroupIndex()
   ensureMthreadTextIndex()
   ensureUserTextIndex()
+
+  //reserve group names
   reserveNamespaces()
 }
 
