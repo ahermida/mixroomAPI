@@ -217,7 +217,7 @@ func createPost(res http.ResponseWriter, req *http.Request) {
   thrdId := bson.ObjectIdHex(reqBody.Thread)
 
   //CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string)
-  _, err := db.CreatePost(usrId, thrdId, responseTo, reqBody.Author, reqBody.Body, reqBody.Content)
+  _, err := db.CreatePost(usrId, thrdId, responseTo, reqBody.Author, reqBody.Body, reqBody.Content, reqBody.ContentType)
   if err != nil {
     http.Error(res, http.StatusText(500), 500)
     return

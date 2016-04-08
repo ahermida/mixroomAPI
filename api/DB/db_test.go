@@ -13,7 +13,7 @@ import (
   CreateUser(email, username, password string) (string, error)
   CreateThread(group string, anonymous bool, post *models.Post) error
   CreateHeadPost(author, body, content string, authorId bson.ObjectId) *models.Post
-  CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error)
+  CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content, contentType string) (*models.Post, error)
   CreateGroup(group string, user bson.ObjectId, private bool) error
   GroupExists(group string) bool
   CreateNotification(id bson.ObjectId, link, text string) error
@@ -280,7 +280,7 @@ func TestThreads(t *testing.T) {
   }
 
   //CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error)
-  pst, errPost := CreatePost(bson.ObjectIdHex(store["id1"]), threadId, make([]bson.ObjectId, 0), "test", "hello", "youtube!")
+  pst, errPost := CreatePost(bson.ObjectIdHex(store["id1"]), threadId, make([]bson.ObjectId, 0), "test", "hello", "youtube!", "yo")
   if errPost != nil {
     t.Errorf("Couldn't make the post!")
   }

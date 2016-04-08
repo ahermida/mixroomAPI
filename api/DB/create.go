@@ -153,9 +153,13 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
 //[CREATE] creates a head post for a given thread -- leave thread id unset
 func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *models.Post {
 
+  //post's id
+  id := bson.NewObjectId()
+
   //make post
   post := &models.Post{
-    Id: bson.NewObjectId(),
+    Id: id,
+    SId: id.Hex(),
     Created: bson.Now(),
     Author: author,
     AuthorId: authorId,
@@ -174,19 +178,24 @@ func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *model
  */
 
 //[CREATE] creates a post for a given thread
-func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId, author, body, content string) (*models.Post, error) {
+func CreatePost(authorId, thread bson.ObjectId, responseTo []bson.ObjectId,
+                author, body, content, contentType string) (*models.Post, error) {
   //connect to DB
   db := Connection.DB(config.DBName)
 
+  id :=  bson.NewObjectId()
+
   //add post to DB, notify people that it exists, add replies to responses
   post := &models.Post{
-    Id: bson.NewObjectId(),
+    Id: id,
+    SId: id.Hex(),
     Created: bson.Now(),
     Author: author,
     AuthorId: authorId,
     Replies: make([]bson.ObjectId,0),
     ResponseTo: responseTo,
     Content: content,
+    ContentType: contentType,
     Body: body,
     Thread: thread,
   }

@@ -529,7 +529,7 @@ func TestPost(t *testing.T) {
 
   //format string to get the thread
   json := fmt.Sprintf(`{"thread":"%s", "body":"This is just a test", "content": "link",
-    "responseTo":[],"anonymous":false}`, threadId.Hex())
+    "responseTo":[],"anonymous":false, "contentType": "link"}`, threadId.Hex())
   if !DoTest("POST", fmt.Sprintf("%s/thread/post", server.URL), json, 200) {
     t.Error("Posting is messed up.")
   }
