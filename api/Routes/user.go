@@ -27,6 +27,9 @@ func init() {
   //POST change user's name
   UserMux.HandleFunc("/user/name", name)
 
+  //POST search usernames and users' names
+  UserMux.HandleFunc("/user/search", searchUsers)
+
   //POST get user's threads
   UserMux.HandleFunc("/user/threads", threads)
 
@@ -67,6 +70,47 @@ func getUser(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(user); err != nil {
+    panic(err)
+  }
+}
+
+//Handle /user/search
+func searchUsers(res http.ResponseWriter, req *http.Request) {
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+
+  //users only searchable if we're logged in
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //data returned by request
+  var request models.Search
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&request); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  usernames, err := db.SearchUsers(request.Text)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+  }
+
+  send := &models.SendUserSearch{
+    Usernames: usernames,
+  }
+  //else send back user which is already json formatted
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if err := json.NewEncoder(res).Encode(send); err != nil {
     panic(err)
   }
 }

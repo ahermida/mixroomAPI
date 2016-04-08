@@ -306,7 +306,17 @@ func TestThreads(t *testing.T) {
   if err != nil {
     t.Errorf("Problem searching threads!")
   }
-  
+
+  _, errUserSearch := SearchUsers("Octodan")
+  if errUserSearch != nil {
+    t.Errorf("Couldn't search users")
+  }
+
+  _, errGrpSearch := SearchGroups("test")
+  if errGrpSearch != nil {
+    t.Errorf("Couldn't search groups")
+  }
+
   //DeletePost(postID, userID bson.ObjectId) error
   errDeletePost := DeletePost(pst.Id, bson.ObjectIdHex(store["id1"]))
   if errDeletePost != nil {

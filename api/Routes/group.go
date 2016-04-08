@@ -30,6 +30,9 @@ func init() {
 
   //Handles POST, PUT for Admins in groups
   GroupMux.HandleFunc("/group/admin", admn)
+
+  //Handles POST for searching group names
+  GroupMux.HandleFunc("/group/search", searchGroups)
 }
 
 // Handle /group/modify
@@ -362,5 +365,47 @@ func removeAdmin(res http.ResponseWriter, req *http.Request) {
       //return err if invalid token
       http.Error(res, http.StatusText(401), 401)
     }
+  }
+}
+
+//handle POST to /group/search
+func searchGroups(res http.ResponseWriter, req *http.Request) {
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+
+  //users only searchable if we're logged in
+  if id == "" {
+    http.Error(res, http.StatusText(401), 401)
+    return
+  }
+
+  //data returned by request
+  var request models.Search
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&request); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  groups, err := db.SearchGroups(request.Text)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+  }
+
+  send := &models.SendGroupSearch{
+    Groups: groups,
+  }
+
+  //else send back user which is already json formatted
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+  if err := json.NewEncoder(res).Encode(send); err != nil {
+    panic(err)
   }
 }

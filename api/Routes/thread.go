@@ -30,7 +30,7 @@ func init() {
   ThreadMux.HandleFunc("/thread/post", pst)
 
   //POST for searching mthreads
-  ThreadMux.HandleFunc("/thread/search", search)
+  ThreadMux.HandleFunc("/thread/search", searchThreads)
 }
 
 /*
@@ -297,7 +297,7 @@ func removePost(res http.ResponseWriter, req *http.Request) {
 }
 
 //handle POST to /group/
-func search(res http.ResponseWriter, req *http.Request) {
+func searchThreads(res http.ResponseWriter, req *http.Request) {
 
   //only handle POST
   if req.Method != "POST" {

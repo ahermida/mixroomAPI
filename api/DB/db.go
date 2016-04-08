@@ -50,7 +50,7 @@ func ensureUserIndex() {
 
 func ensureUserTextIndex() {
   index := mgo.Index{
-    Key: []string{"$text:name", "$text:usernames"},
+    Key: []string{"name", "usernames"},
   }
 
   //ensure indices are unique
@@ -80,7 +80,7 @@ func ensureMthreadTextIndex() {
 //Makes Sure that groups cannot be duplicates
 func ensureGroupIndex() {
   index := mgo.Index{
-    Key:        []string{"name"},
+    Key:        []string{"$text:name"},
     Unique:     true,
     DropDups:   true,
     Background: true,

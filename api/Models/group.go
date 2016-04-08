@@ -63,5 +63,9 @@ type Permission struct {
 
 type Search struct {
   Text string `json:"text"`
-  Page int    `json:"page"`
+  Page int    `json:"page,omitempty"`
+}
+
+type SendGroupSearch struct {
+  Groups []string `json:"groups"`
 }

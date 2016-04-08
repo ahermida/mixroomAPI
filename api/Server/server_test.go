@@ -557,6 +557,22 @@ func TestSearch(t *testing.T) {
   }
 }
 
+func TestSearchUser(t *testing.T) {
+  //format string to get the thread
+  json :=`{"text":"test"}`
+  if !DoTest("POST", fmt.Sprintf("%s/user/search", server.URL), json, 200) {
+    t.Error("Search User is messed up.")
+  }
+}
+
+func TestSearchGroup(t *testing.T) {
+  //format string to get the thread
+  json :=`{"text":"test"}`
+  if !DoTest("POST", fmt.Sprintf("%s/group/search", server.URL), json, 200) {
+    t.Error("Search Group is messed up.")
+  }
+}
+
 //simple gets
 func TestGets(t *testing.T) {
   if !DoSimpleTest("GET", fmt.Sprintf("%s/user/notifications", server.URL), 200) {

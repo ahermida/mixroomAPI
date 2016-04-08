@@ -85,3 +85,11 @@ type Username struct {
 type Name struct {
   Name string `json:"name"`
 }
+
+type SearchUsers struct {
+  Username string `bson:"username"`
+}
+
+type SendUserSearch struct {
+  Usernames []string `json:"usernames"`
+}

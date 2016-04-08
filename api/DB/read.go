@@ -57,6 +57,7 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
   return threads, nil
 }
 
+
 //[READ] gets group info -- meta info about group from group collection
 func CheckGroup(group string) (*models.Group, error) {
   db := Connection.DB(config.DBName)
@@ -130,6 +131,32 @@ func GetPermission(group string, user string) *models.Permission {
     Admin: false,
   }
 }
+
+//[READ] searches groups for match
+func SearchGroups(str string) ([]string, error) {
+  db := Connection.DB(config.DBName)
+
+  //slice of usernames that we'll return to the user
+  groups := make([]string, 0)
+
+  //groups that we'll get from query
+  var getGroup []struct{
+    Name string `bson:"name"`
+  }
+
+  if err := db.C("groups").Find(bson.M{"$text": bson.M{"$search": str}}).Select(bson.M{"name": 1}).All(&getGroup); err != nil {
+    return nil, err
+  }
+
+  //go through users and add to usernames
+  for _, grp := range getGroup {
+    groups = append(groups, grp.Name)
+  }
+
+  //send it back & nil error
+  return groups, nil
+}
+
 
 /**
     THREADS -------------------------------------------------------------
@@ -229,6 +256,41 @@ func SearchThreads(id string, str string, page int) ([]models.Mthread, error) {
   return goodThreads, nil
 }
 
+//[READ] searches usernames and names for match -- EXACT
+func SearchUsers(str string) ([]string, error) {
+  db := Connection.DB(config.DBName)
+
+  //slice of usernames that we'll return to the user
+  usernames := make([]string, 0)
+
+  //search name & usernames
+  pipeline := []bson.M{bson.M{"$match": bson.M{"$or": []interface{}{
+                         bson.M{"usernames": str},
+                         bson.M{"name": str}}}},
+                         bson.M{"$limit": 10},
+                         bson.M{"$project": bson.M{
+                           "username": 1}}}
+
+  //pipe it up pipe it up pipe it up
+  pipe := db.C("users").Pipe(pipeline)
+
+  var users []models.SearchUsers
+
+  //run it
+  if err := pipe.All(&users); err != nil {
+
+    //if something is wrong, return err
+    return nil, err
+  }
+
+  //go through users and add to usernames
+  for _, usr := range users {
+    usernames = append(usernames, usr.Username)
+  }
+
+  //send it back & nil error
+  return usernames, nil
+}
 
 //[READ] returns group that the given thead (hex string) belongs to
 func GetThreadParent(thread string) string {
