@@ -7,7 +7,7 @@ import (
   "errors"
   "gopkg.in/mgo.v2/bson"
   "fmt"
-  "github.com/ahermida/dartboardAPI/api/Config"
+  "github.com/ahermida/sudopostAPI/api/Config"
 
 )
 

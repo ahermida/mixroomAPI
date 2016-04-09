@@ -54,8 +54,8 @@ package server
 */
 import (
   "net/http"
-  "github.com/ahermida/dartboardAPI/api/Util"
-  "github.com/ahermida/dartboardAPI/api/DB"
+  "github.com/ahermida/sudopostAPI/api/Util"
+  "github.com/ahermida/sudopostAPI/api/DB"
   "net/http/httptest"
   "testing"
   "gopkg.in/mgo.v2/bson"

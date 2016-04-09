@@ -1,12 +1,12 @@
 /*
-  This is the API for dartboard
+  This is the API for sudopost
 */
 package main
 
 import (
   "fmt"
-  "github.com/ahermida/dartboardAPI/api/Server"
-  "github.com/ahermida/dartboardAPI/api/Config"
+  "github.com/ahermida/sudopostAPI/api/Server"
+  "github.com/ahermida/sudopostAPI/api/Config"
   "runtime"
   "syscall"
   "time"

@@ -7,7 +7,7 @@ package db
 
 import (
   "gopkg.in/mgo.v2/bson"
-  "github.com/ahermida/dartboardAPI/api/Config"
+  "github.com/ahermida/sudopostAPI/api/Config"
   "log"
   "gopkg.in/mgo.v2"
 )

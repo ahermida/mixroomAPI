@@ -3,7 +3,7 @@ package config
 
 var Port string = ":8000"
 var DB string = "mongodb://localhost:27017/"
-var DBName string = "dartboard"
+var DBName string = "sudopost"
 var Secret string = ""
 var JwtSecret string = ""
 var Email = &mail{"emailname", "password", "smtp.gmail.com", 587}

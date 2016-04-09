@@ -5,12 +5,12 @@
 package routes
 
 import (
-    "github.com/ahermida/dartboardAPI/api/Util"
-    "github.com/ahermida/dartboardAPI/api/Models"
+    "github.com/ahermida/sudopostAPI/api/Util"
+    "github.com/ahermida/sudopostAPI/api/Models"
     "net/http"
     "encoding/json"
     "gopkg.in/mgo.v2/bson"
-    "github.com/ahermida/dartboardAPI/api/DB"
+    "github.com/ahermida/sudopostAPI/api/DB"
 )
 
 // Routes with /group/ prefix

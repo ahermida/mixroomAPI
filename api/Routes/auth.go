@@ -5,10 +5,10 @@ package routes
 
 import (
     "net/http"
-    "github.com/ahermida/dartboardAPI/api/DB"
-    "github.com/ahermida/dartboardAPI/api/Models"
-    "github.com/ahermida/dartboardAPI/api/Config"
-    "github.com/ahermida/dartboardAPI/api/Util"
+    "github.com/ahermida/sudopostAPI/api/DB"
+    "github.com/ahermida/sudopostAPI/api/Models"
+    "github.com/ahermida/sudopostAPI/api/Config"
+    "github.com/ahermida/sudopostAPI/api/Util"
     "gopkg.in/mgo.v2/bson"
     "crypto/hmac"
     "crypto/sha256"

@@ -6,7 +6,7 @@ package routes
 import (
     "bytes"
     "net/smtp"
-    "github.com/ahermida/dartboardAPI/api/Config"
+    "github.com/ahermida/sudopostAPI/api/Config"
     "text/template"
 )
 

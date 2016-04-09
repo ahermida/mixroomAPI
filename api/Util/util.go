@@ -10,7 +10,7 @@ import (
     "time"
     "net/http"
     "github.com/dgrijalva/jwt-go"
-    "github.com/ahermida/dartboardAPI/api/Config"
+    "github.com/ahermida/sudopostAPI/api/Config"
 )
 
 // HTTP logger

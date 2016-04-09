@@ -4,12 +4,12 @@
 package routes
 
 import (
-    "github.com/ahermida/dartboardAPI/api/Util"
-    "github.com/ahermida/dartboardAPI/api/Models"
+    "github.com/ahermida/sudopostAPI/api/Util"
+    "github.com/ahermida/sudopostAPI/api/Models"
     "net/http"
     "gopkg.in/mgo.v2/bson"
     "encoding/json"
-    "github.com/ahermida/dartboardAPI/api/DB"
+    "github.com/ahermida/sudopostAPI/api/DB"
 )
 
 // Routes with /users/ prefix

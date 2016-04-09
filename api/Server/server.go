@@ -5,10 +5,10 @@ package server
 
 import (
   "net/http"
-  "github.com/ahermida/dartboardAPI/api/Routes"
-  "github.com/ahermida/dartboardAPI/api/Util"
+  "github.com/ahermida/sudopostAPI/api/Routes"
+  "github.com/ahermida/sudopostAPI/api/Util"
   "os"
-  "github.com/ahermida/dartboardAPI/api/DB"
+  "github.com/ahermida/sudopostAPI/api/DB"
 )
 
 //Use this to handle routes

@@ -6,8 +6,8 @@ package db
 import (
   "fmt"
   "gopkg.in/mgo.v2/bson"
-  "github.com/ahermida/dartboardAPI/api/Models"
-  "github.com/ahermida/dartboardAPI/api/Config"
+  "github.com/ahermida/sudopostAPI/api/Models"
+  "github.com/ahermida/sudopostAPI/api/Config"
 
 )
 /**
