@@ -235,7 +235,7 @@ func TestGroup(t *testing.T) {
 func TestThreads(t *testing.T) {
 
   //CreateHeadPost(author, body, content string, authorId bson.ObjectId) *models.Post
-  post := CreateHeadPost("test", "Hello, this is a test head post", "youtube!", bson.ObjectIdHex(store["id1"]))
+  post := CreateHeadPost("test", "Hello, this is a test head post", "youtube!", "dingo", bson.ObjectIdHex(store["id1"]))
 
   store["post"] = post.Id.Hex()
   //CreateThread(group string, anonymous bool, post *models.Post) error

@@ -151,7 +151,7 @@ func CreateThread(group string, anonymous bool, post *models.Post) error {
 }
 
 //[CREATE] creates a head post for a given thread -- leave thread id unset
-func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *models.Post {
+func CreateHeadPost(author, body, content, contentType string, authorId bson.ObjectId) *models.Post {
 
   //post's id
   id := bson.NewObjectId()
@@ -166,6 +166,7 @@ func CreateHeadPost(author, body, content string, authorId bson.ObjectId) *model
     Replies: make([]bson.ObjectId,0),
     ResponseTo: make([]bson.ObjectId,0),
     Content: content,
+    ContentType: contentType,
     Body: body,
   }
 

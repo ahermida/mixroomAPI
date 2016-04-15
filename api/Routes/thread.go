@@ -131,7 +131,7 @@ func createThread(res http.ResponseWriter, req *http.Request) {
   }
 
   //now we're allowed so let's make it
-  post := db.CreateHeadPost(reqBody.Author, reqBody.Body, reqBody.Content, bson.ObjectIdHex(id))
+  post := db.CreateHeadPost(reqBody.Author, reqBody.Body, reqBody.Content, reqBody.ContentType, bson.ObjectIdHex(id))
   if err := db.CreateThread(reqBody.Group, reqBody.Anonymous, post); err != nil {
     http.Error(res, http.StatusText(500), 500)
     return
