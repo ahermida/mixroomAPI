@@ -26,6 +26,9 @@ func init() {
   //POST for creating thread, DELETE removing thread
   ThreadMux.HandleFunc("/thread/modify", thrd)
 
+  //POST for creating thread, DELETE removing thread
+  ThreadMux.HandleFunc("/thread/length", length)
+
   //POST for creating a post, DELETE for removing it, PUT for changing it
   ThreadMux.HandleFunc("/thread/post", pst)
 
@@ -333,6 +336,44 @@ func searchThreads(res http.ResponseWriter, req *http.Request) {
   //get json struct that we're gonna send over -- really just a modified group
   results := &models.SendGroup{
     Threads: threads,
+  }
+
+  //send back no error response
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(results); err != nil {
+    panic(err)
+  }
+}
+
+//[POST] handle getting thread length
+//handle POST to /group/
+func length(res http.ResponseWriter, req *http.Request) {
+
+  //only handle POST
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+    return
+  }
+
+  //data returned by request
+  var request models.GetThread
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&request); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //else, resolve thread
+  size := db.GetThreadSize(request.Thread)
+
+  //get json struct that we're gonna send over -- really just a modified group
+  results := &models.ThreadLen{
+    Length: size,
   }
 
   //send back no error response

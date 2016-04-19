@@ -21,6 +21,7 @@ import (
   CheckGroup(group string) (*models.Group, error)
   IsMember(group string, user string) bool
   GetThreadParent(thread string) string
+  GetThreadSize(thread string) int
   GetGroup(group string, page int) ([]models.Mthread, error)
   GetSaved(userId bson.ObjectId) ([]models.Mthread, error)
   GetNotifications(userId bson.ObjectId) ([]models.Notification, error)
@@ -283,6 +284,11 @@ func TestThreads(t *testing.T) {
   pst, errPost := CreatePost(bson.ObjectIdHex(store["id1"]), threadId, make([]bson.ObjectId, 0), "test", "hello", "youtube!", "yo")
   if errPost != nil {
     t.Errorf("Couldn't make the post!")
+  }
+
+  length := GetThreadSize(threadId.Hex())
+  if length == 0 {
+    t.Errorf("Couldn't get thread length");
   }
 
   //EditPost(text string, post, user bson.ObjectId) error

@@ -485,6 +485,22 @@ func TestGetThread(t *testing.T) {
   }
 }
 
+//test getting thread length
+func TestThreadLength(t *testing.T) {
+  threads, err := db.GetGroup("test", 0)
+  if err != nil {
+    t.Errorf("couldn't actually get the group")
+  }
+
+  //shouldn't throw an error but it might if something went wrong beforehand
+  threadId := threads[0].Thread
+
+  json := fmt.Sprintf(`{"thread":"%s"}`, threadId.Hex())
+  if !DoTest("POST", fmt.Sprintf("%s/thread/length", server.URL), json, 200) {
+    t.Error("Get thread is messed up")
+  }
+}
+
 //test name endpoint
 func TestName(t *testing.T) {
   json := `{"name": "Octopus Is Animal"}`

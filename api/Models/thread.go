@@ -49,3 +49,7 @@ type RemoveThread struct {
   Thread string `json:"thread"`
   Id     string `json:"id,omitempty"`
 }
+
+type ThreadLen struct {
+  Length int    `json:"length,omitempty"`
+}

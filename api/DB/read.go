@@ -306,6 +306,31 @@ func GetThreadParent(thread string) string {
   return thrd.Group
 }
 
+//[READ] get a thread's length (how many posts are in a thread)
+func GetThreadSize(thread string) int {
+  db := Connection.DB(config.DBName)
+  var length []struct {
+    Size int `bson:"size"`
+  }
+  pipeline := []bson.M{
+    bson.M{"$match": bson.M{"_id": bson.ObjectIdHex(thread)}},
+    bson.M{"$project": bson.M{"size": bson.M{"$size": "$posts"}}},
+  }
+
+  //pipe it up pipe it up pipe it up
+  pipe := db.C("threads").Pipe(pipeline)
+
+  //run it
+  if err := pipe.All(&length); err != nil {
+
+    //if something is wrong, return err
+    return 0
+  }
+
+  //should only be one match, and its size should be this. Kinda hacky method -- should be revisited
+  return length[0].Size
+}
+
 /**
     USER  -------------------------------------------------------------
  */
