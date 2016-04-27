@@ -51,5 +51,5 @@ type RemoveThread struct {
 }
 
 type ThreadLen struct {
-  Length int    `json:"length,omitempty"`
+  Length int    `json:"size,omitempty"`
 }

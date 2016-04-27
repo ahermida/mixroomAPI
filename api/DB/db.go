@@ -102,8 +102,15 @@ func ensureGroupIndex() {
 
 //make sure that no groups can be made for "users", "threads", "posts", "groups", or "mthreads"
 func reserveNamespaces() {
-  reserved := []string{"users", "threads", "posts", "groups", "mthreads"}
-  for _, namespace := range reserved {
+  //private groups
+  _reserved := []string{"users", "threads", "posts", "groups", "mthreads"}
+  for _, namespace := range _reserved {
     CreateGroup(namespace, bson.NewObjectId(), true)
+  }
+
+  reserved := []string{"/", "/404", "/cs/", "/music/", "/vid/", "/bored/", "/random/"}
+  //create "/" group
+  for _, namespace := range reserved {
+    CreateGroup(namespace, bson.NewObjectId(), false)
   }
 }

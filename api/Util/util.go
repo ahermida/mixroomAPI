@@ -114,3 +114,11 @@ func GetId(req *http.Request) string {
   }
   return id
 }
+
+func AddCORS(handler http.Handler) http.Handler {
+  return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+    res.Header().Add("Access-Control-Allow-Origin", "*")
+    handler.ServeHTTP(res, req)
+    log.Printf("CORS");
+  })
+}

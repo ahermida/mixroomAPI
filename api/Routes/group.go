@@ -33,6 +33,12 @@ func init() {
 
   //Handles POST for searching group names
   GroupMux.HandleFunc("/group/search", searchGroups)
+
+  //Handles POST for searching group names
+  GroupMux.HandleFunc("/group/popular", popular)
+
+  //Handles POST for group info
+  GroupMux.HandleFunc("/group/info", info)
 }
 
 // Handle /group/modify
@@ -96,7 +102,7 @@ func getGroup(res http.ResponseWriter, req *http.Request) {
   if errFromQuery != nil {
 
     //if there's an error in getting the group, return a 500
-    http.Error(res, http.StatusText(500), 500)
+    http.Error(res, http.StatusText(400), 400)
     return
   }
 
@@ -406,6 +412,77 @@ func searchGroups(res http.ResponseWriter, req *http.Request) {
   res.Header().Set("Content-Type", "application/json; charset=UTF-8")
   res.WriteHeader(http.StatusOK)
   if err := json.NewEncoder(res).Encode(send); err != nil {
+    panic(err)
+  }
+}
+
+//[POST] get popular posts
+func popular(res http.ResponseWriter, req *http.Request) {
+  //only handle POST
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+    return
+  }
+
+  //data returned by request
+  var request models.GetPop
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&request); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  //user _id in hex
+  id := util.GetId(req)
+
+  //else, resolve thread
+  popular, err := db.GetPopularPosts(id, request.Skip)
+  if err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(popular); err != nil {
+    panic(err)
+  }
+}
+
+//[POST] get popular posts
+func info(res http.ResponseWriter, req *http.Request) {
+  //only handle POST
+  if req.Method != "POST" {
+    http.Error(res, http.StatusText(405), 405)
+    return
+  }
+
+  //data returned by request
+  var request models.Grp
+
+  //POST request handling
+  decoder := json.NewDecoder(req.Body)
+  if err := decoder.Decode(&request); err != nil {
+    http.Error(res, http.StatusText(500), 500)
+    return
+  }
+
+  info, errInfo := db.GetGroupInfo(request.Group)
+
+  if errInfo != nil {
+    http.Error(res, http.StatusText(400), 400)
+    return
+  }
+
+  res.Header().Set("Content-Type", "application/json; charset=UTF-8")
+  res.WriteHeader(http.StatusOK)
+
+  //send over data
+  if err := json.NewEncoder(res).Encode(info); err != nil {
     panic(err)
   }
 }

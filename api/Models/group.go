@@ -26,6 +26,7 @@ type Mthread struct {
   ThreadId string        `bson:"threadId" json:"thread"`
   Head     *Post         `bson:"head" json:"head"`
   Group    string        `bson:"group" json:"group"`
+  Size     int           `bson:"-" json:"size"`
 }
 
 
@@ -57,8 +58,10 @@ type GroupAdmin struct {
 }
 
 type Permission struct {
-  Admin  bool `json:"admin"`
-  Author bool `json:"author"`
+  Allowed bool `json:"allowed"`
+  Admin   bool `json:"admin"`
+  Author  bool `json:"author"`
+  Mod     bool `json:"mod, omitempty"`
 }
 
 type Search struct {
@@ -68,4 +71,11 @@ type Search struct {
 
 type SendGroupSearch struct {
   Groups []string `json:"groups"`
+}
+
+type GroupInfo struct {
+  Created time.Time `json:"created"`
+  Name    string    `json:"name"`
+  Author  string    `json:"author"`
+  Private bool      `bson:"private"`
 }

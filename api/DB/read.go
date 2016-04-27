@@ -24,17 +24,18 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
     //if it doesn't, return an error
     return nil, errors.New("Can't get a group that doens't exist.")
   }
+
   //get DB
   db := Connection.DB(config.DBName)
 
   //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items -- project all fields
   pipeline := []bson.M{bson.M{"$sort": bson.M{"created": -1 }},
-                       bson.M{"$limit": 30},
                        bson.M{"$skip": page * 30},
+                       bson.M{"$limit": 30},
                        bson.M{"$project": bson.M{
                          "_id": 1,
                          "id": 1,
-                         "Created": 1,
+                         "created": 1,
                          "thread": 1,
                          "threadId": 1,
                          "head": 1,
@@ -52,6 +53,12 @@ func GetGroup(group string, page int) ([]models.Mthread, error) {
     //if something is wrong, return err
     return nil, err
   }
+
+  //get size for each thread
+  for i := 0; i < len(threads); i++ {
+    threads[i].Size = GetThreadSize(threads[i].ThreadId)
+  }
+
 
   //else return the threads, and a nil error
   return threads, nil
@@ -105,30 +112,59 @@ func GetPermission(group string, user string) *models.Permission {
 
   //check if something went wrong finding the group
   if err != nil {
-    return nil
+    return &models.Permission{
+      Allowed: false,
+      Author: false,
+      Admin: false,
+      Mod: false,
+    }
   }
 
   if user == g.Author.Hex() {
     return &models.Permission{
+      Allowed: true,
       Author: true,
       Admin: true,
+      Mod: true,
     }
   }
 
   //bring back group metadata
   for _, member := range g.Admins {
     if member.Hex() == user {
-      return &models.Permission{
-            Author: false,
-            Admin: true,
+      if g.Private {
+        return &models.Permission{
+              Allowed: true,
+              Author: false,
+              Admin: true,
+              Mod: false,
+        }
+      } else {
+       return &models.Permission{
+              Allowed: true,
+              Author: false,
+              Admin: true,
+              Mod: true,
+        }
       }
     }
   }
 
+  if g.Private {
+    return &models.Permission{
+        Allowed: false,
+        Author: false,
+        Admin: false,
+        Mod: false,
+      }
+  }
+
   //this shouldn't happen if we're authors or admins
   return &models.Permission{
+    Allowed: true,
     Author: false,
     Admin: false,
+    Mod: false,
   }
 }
 
@@ -155,6 +191,41 @@ func SearchGroups(str string) ([]string, error) {
 
   //send it back & nil error
   return groups, nil
+}
+
+
+//[READ] get metadata about group
+func GetGroupInfo(grp string) (*models.GroupInfo, error) {
+
+  //slice of usernames that we'll return to the user
+  check, err := CheckGroup(grp)
+
+  // type GroupInfo struct {
+  //   Created time.Time `json:"created"`
+  //   Name    string    `json:"name"`
+  //   Author  string    `json:"author"`
+  //   Private bool      `bson:"private"`
+  // }
+
+  if err != nil {
+    return nil, err
+  }
+
+  username := GetUsername(check.Author)
+
+  if username == "" {
+    username = "Anonymous"
+  }
+
+  group := &models.GroupInfo{
+    Created: check.Created,
+    Name: check.Name,
+    Author: username,
+    Private: check.Private,
+  }
+
+  //send it back & nil error
+  return group, nil
 }
 
 
@@ -211,6 +282,62 @@ func GetThread(threadID bson.ObjectId) (*models.ResThread, error) {
  return resThread, nil
 }
 
+//[READ] kinda like getting a thread, but it's just the most popular posts (8 of them)
+func GetPopularPosts(id string, skip int) (*models.PopularPosts, error) {
+  db := Connection.DB(config.DBName)
+
+  //Get only those posted in the past 24 hours, sort them by # of replies, and limit them
+  pipeline := []bson.M{bson.M{"$match": bson.M{"created": bson.M{"$gt": bson.Now().AddDate(0, 0, -1)}}},
+                       bson.M{"$project": bson.M{"replies_size": bson.M{"$size": bson.M{"$ifNull": []string{"$replies", "[]"}}},
+                       "_id": 1,
+                       "id": 1,
+                       "created": 1,
+                       "thread": 1,
+                       "replies": 1,
+                       "author": 1,
+                       "content": 1,
+                       "contentType": 1,
+                       "body": 1,
+                       }},
+                       bson.M{"$sort": bson.M{"replies_size": 1}},
+                       bson.M{"$skip": skip * 8},
+                       bson.M{"$limit": 8}}
+
+  /* NOTE: We get 20 because the top 8 might be blocked */
+
+  //set up Pipe to actually run query
+  pipe := db.C("posts").Pipe(pipeline)
+
+  //for population later
+  pop := &models.PopularPosts{
+    Posts: make([]models.PopularPost,0),
+  }
+
+  //gonna populate this slice with the query
+  var pops []models.PopularPost
+
+  //run it
+  if err := pipe.All(&pops); err != nil {
+
+    //if something is wrong, return err
+    return nil, err
+  }
+
+  //filter out the posts that we're not allowed to see
+  for _, el := range pops {
+    grp := GetThreadParent(el.Thread.Hex())
+    if IsMember(grp, id){
+      el.Size = GetThreadSize(el.Thread.Hex())
+      el.ThreadId = el.Thread.Hex()
+      el.Group = grp
+      pop.Posts = append(pop.Posts, el)
+    }
+  }
+
+  //else return the threads, and a nil error
+  return pop, nil
+}
+
 //[READ] search posts text index for a given string
 func SearchThreads(id string, str string, page int) ([]models.Mthread, error) {
   db := Connection.DB(config.DBName)
@@ -218,12 +345,12 @@ func SearchThreads(id string, str string, page int) ([]models.Mthread, error) {
   //Sort by Timestamp --> Get The Range from (page * 30) -- 30 items -- project all fields
   pipeline := []bson.M{bson.M{"$match": bson.M{"$text": bson.M{"$search": str}}},
                        bson.M{"$sort": bson.M{"created": -1}},
-                       bson.M{"$limit": 30},
                        bson.M{"$skip": page * 30},
+                       bson.M{"$limit": 30},
                        bson.M{"$project": bson.M{
                          "_id": 1,
                          "id": 1,
-                         "Created": 1,
+                         "created": 1,
                          "thread": 1,
                          "threadId": 1,
                          "head": 1,
@@ -248,6 +375,7 @@ func SearchThreads(id string, str string, page int) ([]models.Mthread, error) {
   //filter out the threads that we're not allowed to see
   for _, el := range threads {
     if IsMember(el.Group, id){
+      el.Size = GetThreadSize(el.ThreadId)
       goodThreads = append(goodThreads, el)
     }
   }
@@ -328,7 +456,7 @@ func GetThreadSize(thread string) int {
   }
 
   //should only be one match, and its size should be this. Kinda hacky method -- should be revisited
-  return length[0].Size
+  return length[0].Size - 1
 }
 
 /**
@@ -340,9 +468,14 @@ func GetUser(user string) (*models.GetUser, error) {
   db := Connection.DB(config.DBName)
   usr := bson.ObjectIdHex(user)
   var userData models.GetUser
-  fields := bson.M{"email": 1, "username": 1, "unread": 1, "usernames": 1}
+  fields := bson.M{"email": 1, "username": 1, "unread": 1, "usernames": 1, "saved": 1}
   if err := db.C("users").Find(bson.M{"_id": usr}).Select(fields).One(&userData); err != nil {
     return nil, err
+  }
+
+  //populate saved strings
+  for _, el := range userData.Saved {
+    userData.SavedStr = append(userData.SavedStr, el.Hex())
   }
 
   return &userData, nil
@@ -367,6 +500,7 @@ func GetSaved(userId bson.ObjectId) ([]models.Mthread, error){
     var item models.Mthread
     err := db.C("mthreads").Find(bson.M{"_id": save}).One(&item)
     if err == nil {
+      item.Size = GetThreadSize(item.ThreadId)
       //add thread to grouping
       threads = append(threads, item)
     }

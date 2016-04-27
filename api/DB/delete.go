@@ -70,8 +70,32 @@ func DeleteThread(threadID, userID bson.ObjectId) error {
     return err
   }
 
+  //metadata about group
+  gr, er := CheckGroup(author.Group)
+  if er != nil {
+    return er
+  }
+
+  //check grp permissions
+  permission := GetPermission(author.Group, userID.Hex())
+  if permission == nil {
+    return errors.New("Problem getting permissions for group")
+  }
+
+  var deletePermission bool = false
+
+  //check if we have permission, if it's a public grp, admins are mods. Else, only author is mod
+  if author.Id == userID {
+    deletePermission = true
+  } else if gr.Private && permission.Author {
+    deletePermission = true
+  } else if !gr.Private && permission.Admin {
+    deletePermission = true
+  }
+
+
   //compare user ids -- if this passes, then go on to do great things
-  if author.Id != userID {
+  if !deletePermission {
     return errors.New("User can't delete the thread as he's not the author.")
   }
 
@@ -79,7 +103,7 @@ func DeleteThread(threadID, userID bson.ObjectId) error {
   mthread := author.Mthread
 
   //get friends of author by mongo _id
-  friends, _ := GetFriendsById(userID)
+  friends, _ := GetFriendsById(author.Id)
 
   //check if we have friends -- not anonymous -- in this case, remove the mthreads from feeds
   if friends != nil {
